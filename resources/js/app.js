@@ -1,8 +1,3 @@
-import Alpine from 'alpinejs';
-
-// Make Alpine globally available
-window.Alpine = Alpine;
-
-// Start Alpine when DOM is ready
-Alpine.start();
+// Alpine.js is included automatically by Livewire Flux via @fluxScripts
+// No manual initialization needed for TALL stack with Livewire
 
