@@ -127,7 +127,7 @@ return [
     */
 
     'migrations' => [
-        'table' => (env('DB_TABLE_PREFIX', '') ?: '') . 'migrations',
+        'table' => 'migrations',
         'update_date_on_publish' => true,
     ],
 
