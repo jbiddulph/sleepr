@@ -10,7 +10,7 @@
             @error('title') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
         <div>
-            <label class="block text-sm font-medium">Subject (optional)</label>
+            <label class="block text-sm font-medium">Subject</label>
             <input type="text" wire:model="subject" class="mt-1 w-full border rounded p-2" />
             @error('subject') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
@@ -127,6 +127,11 @@
                                 <label class="block text-sm font-medium">Title</label>
                                 <input type="text" wire:model.defer="edit_title" class="mt-1 w-full border rounded p-2" />
                                 @error('edit_title') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium">Subject</label>
+                                <input type="text" wire:model.defer="edit_subject" class="mt-1 w-full border rounded p-2" />
+                                @error('edit_subject') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="block text-sm">Body</label>

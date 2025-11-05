@@ -19,8 +19,8 @@ class Index extends Component
     #[Validate('required|string|min:3')]
     public string $title = '';
 
-    #[Validate('nullable|string|min:3')]
-    public ?string $subject = null;
+    #[Validate('required|string|min:3')]
+    public string $subject = '';
 
     #[Validate('required|string|min:3')]
     public string $body = '';
@@ -49,6 +49,7 @@ class Index extends Component
     // Editing state
     public ?string $edit_note_id = null; // uuid
     public string $edit_title = '';
+    public string $edit_subject = '';
     public string $edit_body = '';
     public ?string $edit_send_date = null; // datetime-local string or null
 
@@ -141,6 +142,7 @@ class Index extends Component
         $note = Note::with('attachments')->whereKey($noteId)->where('user_id', Auth::id())->firstOrFail();
         $this->edit_note_id = $note->getKey();
         $this->edit_title = (string) $note->title;
+        $this->edit_subject = (string) ($note->subject ?? '');
         $this->edit_body = (string) $note->body;
         // send_date may be date or datetime; keep as string for input
         $this->edit_send_date = $note->send_date ? (string) $note->send_date : null;
@@ -166,12 +168,14 @@ class Index extends Component
 
         $this->validate([
             'edit_title' => ['required','string','min:3'],
+            'edit_subject' => ['required','string','min:3'],
             'edit_body' => ['required','string','min:3'],
             'edit_send_date' => ['nullable','date'],
         ]);
 
         $note = Note::with('attachments')->whereKey($this->edit_note_id)->where('user_id', Auth::id())->firstOrFail();
         $note->title = $this->edit_title;
+        $note->subject = $this->edit_subject;
         $note->body = $this->edit_body;
         $note->send_date = $this->edit_send_date; // stored as-is; recipients use their own send_date
         $note->template_id = $this->template_id;
@@ -208,6 +212,7 @@ class Index extends Component
     {
         $this->edit_note_id = null;
         $this->edit_title = '';
+        $this->edit_subject = '';
         $this->edit_body = '';
         $this->edit_send_date = null;
         $this->template_id = null;
@@ -278,7 +283,7 @@ class Index extends Component
 
     public function updated($name, $value): void
     {
-        if (in_array($name, ['template_id', 'title', 'body'], true)) {
+        if (in_array($name, ['template_id', 'title', 'subject', 'body'], true)) {
             $this->refreshPreview();
         }
     }
@@ -296,9 +301,10 @@ class Index extends Component
                 $this->preview_html = null;
                 return;
             }
-            $safeTitle = e((string) $this->title ?: 'Email title');
+            $safeTitle = e((string) ($this->subject ?: $this->title ?: 'Email title'));
             $safeBody = nl2br(e((string) $this->body ?: 'Your email body will appear here…'));
             $this->preview_html = str_replace([
+                '{{subject}}',
                 '{{title}}',
                 '{{body}}',
                 '{{heart_url}}',
