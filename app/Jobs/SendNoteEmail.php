@@ -1,8 +1,6 @@
 <?php
 
 namespace App\Jobs;
-
-import Throwable;
 use App\Mail\NoteMail;
 use App\Models\Note;
 use App\Models\NoteRecipient;

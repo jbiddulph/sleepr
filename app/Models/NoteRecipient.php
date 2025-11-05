@@ -13,6 +13,16 @@ class NoteRecipient extends Model
 
     protected $guarded = [];
 
+    protected function casts(): array
+    {
+        return [
+            'send_date' => 'datetime',
+            'sent_at' => 'datetime',
+            'opened_at' => 'datetime',
+            'hearted_at' => 'datetime',
+        ];
+    }
+
     public function note(): BelongsTo
     {
         return $this->belongsTo(Note::class);
