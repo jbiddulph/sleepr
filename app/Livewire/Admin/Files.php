@@ -51,7 +51,7 @@ class Files extends Component
 
             $publicUrl = rtrim($url, '/').'/storage/v1/object/public/'.rawurlencode($bucket).'/'.$path;
             $this->reset('file');
-            $this->status = __('Uploaded: ').$publicUrl;
+            $this->status = __('DONE: ').$publicUrl;
         } catch (\Throwable $e) {
             $this->status = __('Error: ').$e->getMessage();
         }
