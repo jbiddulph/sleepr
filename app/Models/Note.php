@@ -12,9 +12,7 @@ class Note extends Model
     use HasFactory, HasUuid;
     protected $guarded = ['id'];
 
-    protected $casts = [
-        'template' => 'string',
-    ];
+    // No cast for 'template' – it's a relation
 
     public function user(): BelongsTo
     {
