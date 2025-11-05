@@ -109,9 +109,13 @@
 
     <div wire:poll.5s>
         <h2 class="text-lg font-semibold mb-2">Your recent notes</h2>
-        <div class="space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             @forelse($notes as $n)
-                <div class="border rounded p-3">
+                @php
+                    $isScheduled = ($n->send_date && \Illuminate\Support\Carbon::parse($n->send_date)->isFuture()) || (($n->total_recipients ?? 0) > ($n->sent_recipients_count ?? 0));
+                    $isFullySent = ($n->total_recipients ?? 0) > 0 && ($n->sent_recipients_count ?? 0) === ($n->total_recipients ?? 0);
+                @endphp
+                <div class="rounded p-3 border {{ $isScheduled ? 'border-yellow-400' : 'border-zinc-200' }}">
                     @if($edit_note_id === $n->id)
                         <div class="space-y-3">
                             <div>
@@ -173,9 +177,9 @@
                                 </div>
                             </div>
                             <div class="flex gap-2">
-                                <button wire:click="updateNote" class="px-3 py-1.5 bg-blue-600 text-white rounded">Save</button>
-                                <button wire:click="cancelEdit" type="button" class="px-3 py-1.5 border rounded">Cancel</button>
-                                <button wire:click="deleteNote('{{ $n->id }}')" type="button" class="px-3 py-1.5 bg-red-600 text-white rounded" onclick="return confirm('Delete this note and its recipients?')">Delete</button>
+                                <button wire:click="updateNote" class="px-2 py-1 text-sm bg-blue-600 text-white rounded">Save</button>
+                                <button wire:click="cancelEdit" type="button" class="px-2 py-1 text-sm border rounded">Cancel</button>
+                                <button wire:click="deleteNote('{{ $n->id }}')" type="button" class="px-2 py-1 text-sm bg-red-600 text-white rounded" onclick="return confirm('Delete this note and its recipients?')">Delete</button>
                             </div>
                         </div>
                     @else
@@ -183,13 +187,19 @@
                             <div>
                                 <div class="font-semibold">{{ $n->title }}</div>
                                 <div class="text-sm text-gray-600">Hearts: {{ $n->heart_count }} · Send at: {{ $n->send_date ?? '—' }}</div>
-                                <div class="text-xs text-gray-500 mt-0.5">Sent: {{ $n->sent_recipients_count ?? 0 }}/{{ $n->total_recipients ?? 0 }}
-                                    @if(!empty($n->last_sent_at)) · Last sent: {{ \Illuminate\Support\Carbon::parse($n->last_sent_at)->diffForHumans() }} @endif
+                                <div class="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+                                    <span>Sent: {{ $n->sent_recipients_count ?? 0 }}/{{ $n->total_recipients ?? 0 }}</span>
+                                    @if($isFullySent)
+                                        <span class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-green-500 text-white">✓</span>
+                                    @endif
+                                    @if(!empty($n->last_sent_at))
+                                        <span>· Last sent: {{ \Illuminate\Support\Carbon::parse($n->last_sent_at)->diffForHumans() }}</span>
+                                    @endif
                                 </div>
                             </div>
                             <div class="flex items-center gap-2">
-                                <button wire:click="startEdit('{{ $n->id }}')" class="px-3 py-1.5 border rounded">Edit</button>
-                                <button wire:click="deleteNote('{{ $n->id }}')" class="px-3 py-1.5 bg-red-600 text-white rounded" onclick="return confirm('Delete this note and its recipients?')">Delete</button>
+                                <button wire:click="startEdit('{{ $n->id }}')" class="px-2 py-1 text-sm border rounded">Edit</button>
+                                <button wire:click="deleteNote('{{ $n->id }}')" class="px-2 py-1 text-sm bg-red-600 text-white rounded" onclick="return confirm('Delete this note and its recipients?')">Delete</button>
                             </div>
                         </div>
                     @endif
