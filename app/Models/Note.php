@@ -35,9 +35,4 @@ class Note extends Model
     {
         return $this->where('user_id', $user->id)->where('is_published', true)->get();
     }
-
-    public function attachments()
-    {
-        return $this->hasMany(NoteAttachment::class, 'note_id');
-    }
 }
