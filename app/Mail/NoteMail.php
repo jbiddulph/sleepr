@@ -27,7 +27,7 @@ class NoteMail extends Mailable implements ShouldQueue
             $slug = (string) ($this->note->template->slug ?? '');
             // 1) If a Blade view exists for the template slug, use it (e.g. resources/views/emails/{slug}.blade.php)
             if ($slug && \Illuminate\Support\Facades\View::exists('emails.'.$slug)) {
-                $mailable = $this->subject('A note for you')
+                $mailable = $this->subject($this->note->subject ?: 'A note for you')
                     ->view('emails.'.$slug, [
                         'note' => $this->note,
                         'recipient' => $this->recipient,
@@ -37,9 +37,10 @@ class NoteMail extends Mailable implements ShouldQueue
                 // 2) Otherwise, render stored HTML from DB with placeholders
                 $rawHtml = (string) ($this->note->template->html ?? '');
                 if ($rawHtml !== '') {
-                    $safeTitle = e((string) $this->note->title);
+                    $safeTitle = e((string) ($this->note->subject ?: $this->note->title));
                     $safeBody = nl2br(e((string) $this->note->body));
                     $html = str_replace([
+                        '{{subject}}',
                         '{{title}}',
                         '{{body}}',
                         '{{heart_url}}',
@@ -51,10 +52,10 @@ class NoteMail extends Mailable implements ShouldQueue
                         e($this->recipient->email),
                     ], $rawHtml);
 
-                    $mailable = $this->subject('A note for you')->html($html);
+                    $mailable = $this->subject($this->note->subject ?: 'A note for you')->html($html);
                 } else {
                     // 3) Fallback to default view
-                    $mailable = $this->subject('A note for you')
+                    $mailable = $this->subject($this->note->subject ?: 'A note for you')
                         ->view($view, [
                             'note' => $this->note,
                             'recipient' => $this->recipient,
@@ -63,7 +64,7 @@ class NoteMail extends Mailable implements ShouldQueue
                 }
             }
         } else {
-            $mailable = $this->subject('A note for you')
+            $mailable = $this->subject($this->note->subject ?: 'A note for you')
                 ->view($view, [
                     'note' => $this->note,
                     'recipient' => $this->recipient,

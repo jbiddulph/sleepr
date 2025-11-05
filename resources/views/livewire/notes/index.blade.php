@@ -10,11 +10,16 @@
             @error('title') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
         <div>
+            <label class="block text-sm font-medium">Subject (optional)</label>
+            <input type="text" wire:model="subject" class="mt-1 w-full border rounded p-2" />
+            @error('subject') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+        </div>
+        <div>
             <label class="block text-sm font-medium">Body</label>
             <textarea rows="5" wire:model="body" class="mt-1 w-full border rounded p-2"></textarea>
             @error('body') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
                 <label class="block text-sm font-medium">Send date (UTC)</label>
                 <input type="datetime-local" step="600" wire:model="send_date" class="mt-1 w-full border rounded p-2" />

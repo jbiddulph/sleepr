@@ -19,6 +19,9 @@ class Index extends Component
     #[Validate('required|string|min:3')]
     public string $title = '';
 
+    #[Validate('nullable|string|min:3')]
+    public ?string $subject = null;
+
     #[Validate('required|string|min:3')]
     public string $body = '';
 
@@ -74,6 +77,7 @@ class Index extends Component
             'id' => (string) Str::uuid(),
             'user_id' => $user->id,
             'title' => $this->title,
+            'subject' => $this->subject,
             'body' => $this->body,
             'send_date' => $this->send_date,
             'heart_count' => 0,
@@ -105,7 +109,7 @@ class Index extends Component
             ]);
         }
 
-        $this->reset(['title', 'body', 'send_date', 'recipients', 'template_id', 'attachments']);
+        $this->reset(['title', 'subject', 'body', 'send_date', 'recipients', 'template_id', 'attachments']);
         $this->status = 'Note created. Scheduled emails will send automatically.';
     }
 
