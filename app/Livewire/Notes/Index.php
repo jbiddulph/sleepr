@@ -133,6 +133,9 @@ class Index extends Component
     {
         $notes = Note::query()
             ->where('user_id', optional(Auth::user())->id)
+            ->with(['recipients' => function ($q) {
+                $q->select('id', 'note_id', 'email')->orderBy('email');
+            }])
             ->withCount([
                 'recipients as total_recipients',
                 'recipients as sent_recipients_count' => function ($q) {

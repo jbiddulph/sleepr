@@ -148,7 +148,7 @@
                     $isScheduled = ($n->send_date && \Illuminate\Support\Carbon::parse($n->send_date)->isFuture()) || (($n->total_recipients ?? 0) > ($n->sent_recipients_count ?? 0));
                     $isFullySent = ($n->total_recipients ?? 0) > 0 && ($n->sent_recipients_count ?? 0) === ($n->total_recipients ?? 0);
                 @endphp
-                <div class="rounded p-3 border {{ $isScheduled ? 'border-yellow-400' : 'border-zinc-200' }}">
+                <div class="rounded p-3 border bg-white dark:bg-zinc-800 {{ $isScheduled ? 'border-yellow-400' : 'border-zinc-200 dark:border-zinc-700' }}">
                     @if($edit_note_id === $n->id)
                         <div class="space-y-3">
                             <div>
@@ -222,11 +222,36 @@
                         </div>
                     @else
                         <div class="flex items-start justify-between">
-                            <div>
-                                <div class="font-semibold">{{ $n->title }}</div>
-                                <div class="text-sm text-gray-600">Hearts: {{ $n->heart_count }} · Send at: {{ $n->send_date ?? '—' }}</div>
-                                <div class="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
-                                    <span>Sent: {{ $n->sent_recipients_count ?? 0 }}/{{ $n->total_recipients ?? 0 }}</span>
+                            <div class="flex-1">
+                                <div class="font-semibold text-gray-900 dark:text-white">{{ $n->title }}</div>
+                                @if($n->subject)
+                                    <div class="text-sm text-gray-700 dark:text-gray-300 mt-1">Subject: {{ $n->subject }}</div>
+                                @endif
+                                @if($n->recipients && $n->recipients->count() > 0)
+                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                        Recipients: <span class="break-words">{{ $n->recipients->pluck('email')->join(', ') }}</span>
+                                    </div>
+                                @endif
+                                @if($n->send_date)
+                                    <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                        Send at: {{ \Illuminate\Support\Carbon::parse($n->send_date)->format('M d, Y g:i A') }}
+                                    </div>
+                                @endif
+                                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1 flex-wrap">
+                                    @if(($n->heart_count ?? 0) > 0)
+                                        <span class="flex items-center gap-1">
+                                            <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+                                            </svg>
+                                            <span>{{ $n->heart_count }}</span>
+                                        </span>
+                                        @if($n->total_recipients > 0)
+                                            <span>·</span>
+                                        @endif
+                                    @endif
+                                    @if($n->total_recipients > 0)
+                                        <span>Sent: {{ $n->sent_recipients_count ?? 0 }}/{{ $n->total_recipients ?? 0 }}</span>
+                                    @endif
                                     @if($isFullySent)
                                         <span class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-green-500 text-white">✓</span>
                                     @endif
@@ -235,9 +260,9 @@
                                     @endif
                                 </div>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <button wire:click="startEdit('{{ $n->id }}')" class="px-2 py-1 text-sm border rounded">Edit</button>
-                                <button wire:click="deleteNote('{{ $n->id }}')" class="px-2 py-1 text-sm bg-red-600 text-white rounded" onclick="return confirm('Delete this note and its recipients?')">Delete</button>
+                            <div class="flex items-center gap-2 ml-2">
+                                <button wire:click="startEdit('{{ $n->id }}')" class="px-2 py-1 text-sm border rounded bg-white dark:bg-zinc-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-zinc-600">Edit</button>
+                                <button wire:click="deleteNote('{{ $n->id }}')" class="px-2 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700" onclick="return confirm('Delete this note and its recipients?')">Delete</button>
                             </div>
                         </div>
                     @endif
