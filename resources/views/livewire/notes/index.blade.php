@@ -40,6 +40,7 @@
                 <label class="block text-sm font-medium">Attachments from storage</label>
                 <div class="flex items-center gap-2 mt-1">
                     <button type="button" wire:click="fetchBucketFiles" class="px-3 py-1.5 border rounded">Load files</button>
+                    <a href="{{ route('admin.files') }}" target="_blank" class="px-3 py-1.5 border rounded">Upload new file</a>
                     <span class="text-sm text-gray-600">{{ $bucketStatus }}</span>
                 </div>
                 <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-auto">
