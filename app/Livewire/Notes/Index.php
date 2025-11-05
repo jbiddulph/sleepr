@@ -297,9 +297,12 @@ class Index extends Component
             ->where('user_id', $user->id)
             ->firstOrFail();
 
-        // Get recipient emails from original note
-        $recipientEmails = $originalNote->recipients->pluck('email')->toArray();
-        $recipientsString = implode(', ', $recipientEmails);
+        // Get recipient emails from original note - use relationship collection
+        $recipientsCollection = $originalNote->getRelationValue('recipients');
+        $recipientEmails = $recipientsCollection ? $recipientsCollection->pluck('email')->toArray() : [];
+        
+        // Use recipients column if available, otherwise build from relationship
+        $recipientsString = $originalNote->getAttribute('recipients') ?: implode(', ', $recipientEmails);
 
         // Create new note with [COPY] prefix
         $newNote = Note::create([
@@ -316,13 +319,15 @@ class Index extends Component
         ]);
 
         // Copy recipients
-        foreach ($originalNote->recipients as $recipient) {
-            NoteRecipient::create([
-                'note_id' => $newNote->id,
-                'email' => $recipient->email,
-                'token' => Str::uuid(),
-                'send_date' => $recipient->send_date ?? $originalNote->send_date,
-            ]);
+        if ($recipientsCollection) {
+            foreach ($recipientsCollection as $recipient) {
+                NoteRecipient::create([
+                    'note_id' => $newNote->id,
+                    'email' => $recipient->email,
+                    'token' => Str::uuid(),
+                    'send_date' => $recipient->send_date ?? $originalNote->send_date,
+                ]);
+            }
         }
 
         // Copy attachments
