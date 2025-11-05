@@ -301,8 +301,9 @@ class Index extends Component
                 $this->preview_html = null;
                 return;
             }
-            $safeTitle = e((string) ($this->subject ?: $this->title ?: 'Email title'));
-            $safeBody = nl2br(e((string) $this->body ?: 'Your email body will appear here…'));
+            $safeSubject = e((string) ($this->subject ?: 'Sample Subject'));
+            $safeTitle = e((string) ($this->title ?: 'Sample Title'));
+            $safeBody = nl2br(e((string) ($this->body ?: 'Your email body will appear here…')));
             $this->preview_html = str_replace([
                 '{{subject}}',
                 '{{title}}',
@@ -310,6 +311,7 @@ class Index extends Component
                 '{{heart_url}}',
                 '{{recipient_email}}',
             ], [
+                $safeSubject,
                 $safeTitle,
                 $safeBody,
                 '#',
