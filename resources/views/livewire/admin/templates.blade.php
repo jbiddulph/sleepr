@@ -17,7 +17,7 @@
             </div>
         </div>
         <div>
-            <label class="block text-sm font-medium">HTML (use {{'{{title}}'}}, {{'{{body}}'}}, {{'{{heart_url}}'}})</label>
+            <label class="block text-sm font-medium">HTML (use &#123;&#123;title&#125;&#125;, &#123;&#123;body&#125;&#125;, &#123;&#123;heart_url&#125;&#125;)</label>
             <textarea rows="12" wire:model="html" class="mt-1 w-full border rounded p-2 font-mono text-sm"></textarea>
             @error('html') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
