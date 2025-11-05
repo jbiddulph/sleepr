@@ -4,8 +4,12 @@ namespace App\Livewire\Notes;
 
 use App\Models\Note;
 use App\Models\NoteRecipient;
+use App\Models\NoteAttachment;
+use App\Models\Template;
+use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -26,15 +30,39 @@ class Index extends Component
 
     public string $status = '';
 
+    // Template selection
+    #[Validate('nullable|uuid|exists:templates,id')]
+    public ?string $template_id = null;
+    public array $templates = [];
+
+    // Attachments selection (from Supabase bucket)
+    public array $attachments = []; // [{name,url,size}]
+    public array $bucketFiles = [];
+    public string $bucketStatus = '';
+
     // Editing state
     public ?string $edit_note_id = null; // uuid
     public string $edit_title = '';
     public string $edit_body = '';
     public ?string $edit_send_date = null; // datetime-local string or null
 
+    public function mount(): void
+    {
+        $this->templates = Template::query()->where('is_active', true)->orderBy('name')->get(['id','name'])->toArray();
+    }
+
     public function save(): void
     {
         $this->validate();
+
+        // Enforce 10-minute increments on server too
+        if ($this->send_date) {
+            $dt = Carbon::parse($this->send_date, 'UTC');
+            if ($dt->minute % 10 !== 0) {
+                $this->addError('send_date', __('Send time must be in 10-minute increments (00,10,20,30,40,50).'));
+                return;
+            }
+        }
 
         $user = Auth::user();
 
@@ -46,6 +74,7 @@ class Index extends Component
             'send_date' => $this->send_date,
             'heart_count' => 0,
             'is_published' => true,
+            'template_id' => $this->template_id,
         ]);
 
         $emails = collect(preg_split('/[\n,]+/', $this->recipients))
@@ -60,7 +89,19 @@ class Index extends Component
             );
         }
 
-        $this->reset(['title', 'body', 'send_date', 'recipients']);
+        // Persist selected attachments
+        foreach ($this->attachments as $att) {
+            if (!isset($att['url'])) { continue; }
+            NoteAttachment::create([
+                'id' => (string) Str::uuid(),
+                'note_id' => $note->id,
+                'name' => $att['name'] ?? basename(parse_url($att['url'], PHP_URL_PATH) ?? ''),
+                'url' => $att['url'],
+                'size' => isset($att['size']) ? (int) $att['size'] : null,
+            ]);
+        }
+
+        $this->reset(['title', 'body', 'send_date', 'recipients', 'template_id', 'attachments']);
         $this->status = 'Note created. Scheduled emails will send automatically.';
     }
 
@@ -130,6 +171,62 @@ class Index extends Component
         $this->edit_title = '';
         $this->edit_body = '';
         $this->edit_send_date = null;
+    }
+
+    // Supabase helpers (list bucket files and manage selection)
+    public function fetchBucketFiles(): void
+    {
+        $bucket = config('filesystems.disks.supabase.bucket') ?? env('SUPABASE_BUCKET');
+        $url = rtrim(env('SUPABASE_URL', ''), '/');
+        $key = env('SUPABASE_SERVICE_KEY', env('SUPABASE_ANON_KEY'));
+        if (!$bucket || !$url || !$key) {
+            $this->bucketStatus = __('Missing SUPABASE configuration.');
+            return;
+        }
+        try {
+            $endpoint = $url.'/storage/v1/object/list/'.rawurlencode($bucket);
+            $resp = Http::withHeaders([
+                'apikey' => $key,
+                'Authorization' => 'Bearer '.$key,
+                'Content-Type' => 'application/json',
+            ])->post($endpoint, [
+                'prefix' => '',
+                'limit' => 100,
+                'offset' => 0,
+                'sortBy' => [ 'column' => 'name', 'order' => 'asc' ],
+            ]);
+            if ($resp->failed()) {
+                $this->bucketStatus = __('Failed to load files.');
+                return;
+            }
+            $files = $resp->json() ?: [];
+            $this->bucketFiles = collect($files)
+                ->filter(fn ($f) => isset($f['name']) && empty($f['metadata']['is_directory'] ?? false))
+                ->map(function ($f) use ($url, $bucket) {
+                    $public = rtrim($url, '/').'/storage/v1/object/public/'.rawurlencode($bucket).'/'.$f['name'];
+                    return [
+                        'name' => $f['name'],
+                        'url' => $public,
+                        'size' => $f['metadata']['size'] ?? null,
+                    ];
+                })->values()->all();
+            $this->bucketStatus = __('Loaded :n files', ['n' => count($this->bucketFiles)]);
+        } catch (\Throwable $e) {
+            $this->bucketStatus = __('Error: ').$e->getMessage();
+        }
+    }
+
+    public function addAttachment(string $url, string $name = '', $size = null): void
+    {
+        $exists = collect($this->attachments)->firstWhere('url', $url);
+        if (!$exists) {
+            $this->attachments[] = ['url' => $url, 'name' => $name, 'size' => $size];
+        }
+    }
+
+    public function removeAttachment(string $url): void
+    {
+        $this->attachments = collect($this->attachments)->reject(fn ($a) => $a['url'] === $url)->values()->all();
     }
 }
 

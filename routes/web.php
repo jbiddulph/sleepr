@@ -7,6 +7,7 @@ use Livewire\Volt\Volt;
 use App\Livewire\Notes\Index as NotesIndex;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Livewire\Admin\Recipients as AdminRecipients;
+use App\Livewire\Admin\Files as AdminFiles;
 
 Route::get('/', function () {
     return view('welcome');
@@ -45,4 +46,5 @@ Route::get('/h/{token}', NoteHeartController::class)->name('notes.heart');
 Route::middleware(['auth', 'can:admin'])->group(function () {
     Route::get('/admin', AdminDashboard::class)->name('admin.dashboard');
     Route::get('/admin/recipients', AdminRecipients::class)->name('admin.recipients');
+    Route::get('/admin/files', AdminFiles::class)->name('admin.files');
 });

@@ -17,13 +17,78 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
                 <label class="block text-sm font-medium">Send date (UTC)</label>
-                <input type="datetime-local" wire:model="send_date" class="mt-1 w-full border rounded p-2" />
+                <input type="datetime-local" step="600" wire:model="send_date" class="mt-1 w-full border rounded p-2" />
                 @error('send_date') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
             </div>
             <div>
                 <label class="block text-sm font-medium">Recipient emails (comma or newline separated)</label>
                 <textarea rows="3" wire:model="recipients" class="mt-1 w-full border rounded p-2" placeholder="name@example.com, other@example.com"></textarea>
                 @error('recipients') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium">Email template</label>
+                <select wire:model="template_id" class="mt-1 w-full border rounded p-2">
+                    <option value="">Default</option>
+                    @foreach($this->templates as $tpl)
+                        <option value="{{ $tpl['id'] }}">{{ $tpl['name'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium">Attachments from storage</label>
+                <div class="flex items-center gap-2 mt-1">
+                    <button type="button" wire:click="fetchBucketFiles" class="px-3 py-1.5 border rounded">Load files</button>
+                    <span class="text-sm text-gray-600">{{ $bucketStatus }}</span>
+                </div>
+                <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-auto">
+                    @foreach($bucketFiles as $f)
+                        <div class="flex items-center justify-between border rounded p-2">
+                            <div class="truncate"><span class="text-sm">{{ $f['name'] }}</span></div>
+                            <button type="button" class="text-blue-600 text-sm" wire:click="addAttachment('{{ $f['url'] }}', '{{ addslashes($f['name']) }}', {{ (int)($f['size'] ?? 0) }})">Attach</button>
+                        </div>
+                    @endforeach
+                    @if(empty($bucketFiles))
+                        <div class="text-sm text-gray-500">No files loaded.</div>
+                    @endif
+                </div>
+                @if(!empty($attachments))
+                    <div class="mt-3">
+                        <div class="text-sm font-medium mb-1">Selected attachments</div>
+                        <div class="space-y-1">
+                            @foreach($attachments as $a)
+                                <div class="flex items-center justify-between text-sm">
+                                    <a href="{{ $a['url'] }}" target="_blank" class="text-blue-600 truncate">{{ $a['name'] ?? basename(parse_url($a['url'], PHP_URL_PATH) ?? '') }}</a>
+                                    <button type="button" class="text-red-600" wire:click="removeAttachment('{{ $a['url'] }}')">Remove</button>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+            </div>
+        </div>
+        <div>
+            <div class="text-sm font-medium mb-1">Template preview</div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <div class="text-xs text-gray-600 mb-1">Mobile</div>
+                    <div class="border rounded p-2 max-w-xs">
+                        <div class="prose prose-sm max-w-none">
+                            {{-- Basic preview (not exact render) --}}
+                            <div class="text-gray-900 whitespace-pre-wrap">{{ \Illuminate\Support\Str::limit($body ?: 'Your email body will appear here…', 500) }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-xs text-gray-600 mb-1">Desktop</div>
+                    <div class="border rounded p-4">
+                        <div class="prose max-w-none">
+                            <h3 class="font-semibold">{{ $title ?: 'Email title' }}</h3>
+                            <div class="text-gray-900 whitespace-pre-wrap">{{ \Illuminate\Support\Str::limit($body ?: 'Your email body will appear here…', 1200) }}</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         <div>
