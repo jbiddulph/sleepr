@@ -31,6 +31,11 @@ class Note extends Model
         return $this->hasMany(NoteAttachment::class, 'note_id');
     }
 
+    public function recipients(): HasMany
+    {
+        return $this->hasMany(NoteRecipient::class, 'note_id');
+    }
+
     public function publishedNotes(User $user)
     {
         return $this->where('user_id', $user->id)->where('is_published', true)->get();

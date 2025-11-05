@@ -22,7 +22,7 @@ class SendNoteEmail implements ShouldQueue
     public function handle(): void
     {
         $recipient = NoteRecipient::findOrFail($this->recipientId);
-        $note = Note::findOrFail($this->noteId);
+        $note = Note::with(['template', 'attachments'])->findOrFail($this->noteId);
 
         Mail::to($recipient->email)->send(new NoteMail($note, $recipient));
 

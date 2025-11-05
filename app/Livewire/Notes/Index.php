@@ -113,6 +113,16 @@ class Index extends Component
     {
         $notes = Note::query()
             ->where('user_id', optional(Auth::user())->id)
+            ->withCount([
+                'recipients as total_recipients',
+                'recipients as sent_recipients_count' => function ($q) {
+                    $q->whereNotNull('sent_at');
+                },
+            ])
+            ->addSelect([
+                'last_sent_at' => NoteRecipient::selectRaw('MAX(sent_at)')
+                    ->whereColumn('note_id', 'notes.id'),
+            ])
             ->latest()
             ->limit(25)
             ->get();
@@ -124,12 +134,19 @@ class Index extends Component
 
     public function startEdit(string $noteId): void
     {
-        $note = Note::whereKey($noteId)->where('user_id', Auth::id())->firstOrFail();
+        $note = Note::with('attachments')->whereKey($noteId)->where('user_id', Auth::id())->firstOrFail();
         $this->edit_note_id = $note->getKey();
         $this->edit_title = (string) $note->title;
         $this->edit_body = (string) $note->body;
         // send_date may be date or datetime; keep as string for input
         $this->edit_send_date = $note->send_date ? (string) $note->send_date : null;
+        $this->template_id = $note->template_id;
+        $this->attachments = $note->attachments->map(fn ($a) => [
+            'name' => $a->name,
+            'url' => $a->url,
+            'size' => $a->size,
+        ])->values()->all();
+        $this->refreshPreview();
     }
 
     public function cancelEdit(): void
@@ -149,11 +166,25 @@ class Index extends Component
             'edit_send_date' => ['nullable','date'],
         ]);
 
-        $note = Note::whereKey($this->edit_note_id)->where('user_id', Auth::id())->firstOrFail();
+        $note = Note::with('attachments')->whereKey($this->edit_note_id)->where('user_id', Auth::id())->firstOrFail();
         $note->title = $this->edit_title;
         $note->body = $this->edit_body;
         $note->send_date = $this->edit_send_date; // stored as-is; recipients use their own send_date
+        $note->template_id = $this->template_id;
         $note->save();
+
+        // Replace attachments with current selection
+        $note->attachments()->delete();
+        foreach ($this->attachments as $att) {
+            if (!isset($att['url'])) { continue; }
+            NoteAttachment::create([
+                'id' => (string) Str::uuid(),
+                'note_id' => $note->id,
+                'name' => $att['name'] ?? basename(parse_url($att['url'], PHP_URL_PATH) ?? ''),
+                'url' => $att['url'],
+                'size' => isset($att['size']) ? (int) $att['size'] : null,
+            ]);
+        }
 
         $this->status = __('Note updated.');
         $this->resetEditState();
@@ -175,6 +206,14 @@ class Index extends Component
         $this->edit_title = '';
         $this->edit_body = '';
         $this->edit_send_date = null;
+        $this->template_id = null;
+        $this->attachments = [];
+    }
+
+    // Manual reload button
+    public function reloadPreview(): void
+    {
+        $this->refreshPreview();
     }
 
     // Supabase helpers (list bucket files and manage selection)
@@ -233,19 +272,11 @@ class Index extends Component
         $this->attachments = collect($this->attachments)->reject(fn ($a) => $a['url'] === $url)->values()->all();
     }
 
-    public function updatedTemplateId(): void
+    public function updated($name, $value): void
     {
-        $this->refreshPreview();
-    }
-
-    public function updatedTitle(): void
-    {
-        $this->refreshPreview();
-    }
-
-    public function updatedBody(): void
-    {
-        $this->refreshPreview();
+        if (in_array($name, ['template_id', 'title', 'body'], true)) {
+            $this->refreshPreview();
+        }
     }
 
     private function refreshPreview(): void

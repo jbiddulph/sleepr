@@ -51,6 +51,23 @@ class NoteMail extends Mailable implements ShouldQueue
                 ]);
         }
 
+        // Attach files from note attachments (public URLs)
+        if ($this->note->relationLoaded('attachments')) {
+            foreach ($this->note->attachments as $att) {
+                try {
+                    $tmp = tempnam(sys_get_temp_dir(), 'att_');
+                    $data = @file_get_contents($att->url);
+                    if ($data !== false) {
+                        file_put_contents($tmp, $data);
+                        $name = $att->name ?: basename(parse_url($att->url, PHP_URL_PATH));
+                        $mailable->attach($tmp, ['as' => $name]);
+                    }
+                } catch (\Throwable $e) {
+                    // skip attachment errors
+                }
+            }
+        }
+
         return $mailable;
     }
 }
