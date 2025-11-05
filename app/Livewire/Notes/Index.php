@@ -177,10 +177,11 @@ class Index extends Component
             'size' => $a->size,
         ])->values()->all();
         // Load existing recipients - use recipients field if available, otherwise fall back to relationship
-        if (!empty($note->recipients)) {
-            $this->edit_recipients = $note->recipients;
+        $recipientsString = $note->getAttribute('recipients'); // Get the column value
+        if (!empty($recipientsString)) {
+            $this->edit_recipients = $recipientsString;
         } else {
-            $this->edit_recipients = $note->recipients()->pluck('email')->join(', ');
+            $this->edit_recipients = $note->getRelationValue('recipients')?->pluck('email')->join(', ') ?? '';
         }
         $this->showEditModal = true;
         $this->refreshPreview();

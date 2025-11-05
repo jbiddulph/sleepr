@@ -155,9 +155,13 @@
                                 @if($n->subject)
                                     <div class="text-sm text-gray-700 dark:text-gray-300 mt-1">Subject: {{ $n->subject }}</div>
                                 @endif
-                                @if($n->recipients && $n->recipients->count() > 0)
+                                @php
+                                    $recipientsCollection = $n->getRelationValue('recipients');
+                                    $recipientsCount = $recipientsCollection ? $recipientsCollection->count() : 0;
+                                @endphp
+                                @if($recipientsCount > 0)
                                     <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                        Recipients: <span class="break-words">{{ $n->recipients->pluck('email')->join(', ') }}</span>
+                                        Recipients: <span class="break-words">{{ $recipientsCollection->pluck('email')->join(', ') }}</span>
                                     </div>
                                 @endif
                                 @if($n->send_date)
