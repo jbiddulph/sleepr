@@ -40,6 +40,9 @@ class Index extends Component
     public array $bucketFiles = [];
     public string $bucketStatus = '';
 
+    // Live template preview
+    public ?string $preview_html = null;
+
     // Editing state
     public ?string $edit_note_id = null; // uuid
     public string $edit_title = '';
@@ -49,6 +52,7 @@ class Index extends Component
     public function mount(): void
     {
         $this->templates = Template::query()->where('is_active', true)->orderBy('name')->get(['id','name'])->toArray();
+        $this->refreshPreview();
     }
 
     public function save(): void
@@ -227,6 +231,52 @@ class Index extends Component
     public function removeAttachment(string $url): void
     {
         $this->attachments = collect($this->attachments)->reject(fn ($a) => $a['url'] === $url)->values()->all();
+    }
+
+    public function updatedTemplateId(): void
+    {
+        $this->refreshPreview();
+    }
+
+    public function updatedTitle(): void
+    {
+        $this->refreshPreview();
+    }
+
+    public function updatedBody(): void
+    {
+        $this->refreshPreview();
+    }
+
+    private function refreshPreview(): void
+    {
+        try {
+            $raw = null;
+            if ($this->template_id) {
+                $tpl = Template::find($this->template_id);
+                $raw = $tpl?->html;
+            }
+            if (!$raw) {
+                // Fallback simple preview
+                $this->preview_html = null;
+                return;
+            }
+            $safeTitle = e((string) $this->title ?: 'Email title');
+            $safeBody = nl2br(e((string) $this->body ?: 'Your email body will appear here…'));
+            $this->preview_html = str_replace([
+                '{{title}}',
+                '{{body}}',
+                '{{heart_url}}',
+                '{{recipient_email}}',
+            ], [
+                $safeTitle,
+                $safeBody,
+                '#',
+                'recipient@example.com',
+            ], (string) $raw);
+        } catch (\Throwable $e) {
+            $this->preview_html = null;
+        }
     }
 }
 

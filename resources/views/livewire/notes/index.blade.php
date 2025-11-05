@@ -74,20 +74,27 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <div class="text-xs text-gray-600 mb-1">Mobile</div>
-                    <div class="border rounded p-2 max-w-xs">
-                        <div class="prose prose-sm max-w-none">
-                            {{-- Basic preview (not exact render) --}}
-                            <div class="text-gray-900 whitespace-pre-wrap">{{ \Illuminate\Support\Str::limit($body ?: 'Your email body will appear here…', 500) }}</div>
-                        </div>
+                    <div class="border rounded p-2 max-w-xs overflow-hidden">
+                        @if($preview_html)
+                            <div class="prose prose-sm max-w-none">{!! $preview_html !!}</div>
+                        @else
+                            <div class="prose prose-sm max-w-none">
+                                <div class="text-gray-900 whitespace-pre-wrap">{{ \Illuminate\Support\Str::limit($body ?: 'Your email body will appear here…', 500) }}</div>
+                            </div>
+                        @endif
                     </div>
                 </div>
                 <div>
                     <div class="text-xs text-gray-600 mb-1">Desktop</div>
-                    <div class="border rounded p-4">
-                        <div class="prose max-w-none">
-                            <h3 class="font-semibold">{{ $title ?: 'Email title' }}</h3>
-                            <div class="text-gray-900 whitespace-pre-wrap">{{ \Illuminate\Support\Str::limit($body ?: 'Your email body will appear here…', 1200) }}</div>
-                        </div>
+                    <div class="border rounded p-4 overflow-hidden">
+                        @if($preview_html)
+                            <div class="prose max-w-none">{!! $preview_html !!}</div>
+                        @else
+                            <div class="prose max-w-none">
+                                <h3 class="font-semibold">{{ $title ?: 'Email title' }}</h3>
+                                <div class="text-gray-900 whitespace-pre-wrap">{{ \Illuminate\Support\Str::limit($body ?: 'Your email body will appear here…', 1200) }}</div>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
