@@ -35,6 +35,7 @@ class Index extends Component
 
     // Modal state
     public bool $showCreateModal = false;
+    public bool $showEditModal = false;
 
     // Template selection
     #[Validate('nullable|uuid|exists:templates,id')]
@@ -170,11 +171,18 @@ class Index extends Component
             'url' => $a->url,
             'size' => $a->size,
         ])->values()->all();
+        $this->showEditModal = true;
         $this->refreshPreview();
     }
 
     public function cancelEdit(): void
     {
+        $this->resetEditState();
+    }
+
+    public function closeEditModal(): void
+    {
+        $this->showEditModal = false;
         $this->resetEditState();
     }
 
@@ -213,6 +221,7 @@ class Index extends Component
         }
 
         $this->status = __('Note updated.');
+        $this->showEditModal = false;
         $this->resetEditState();
     }
 
@@ -280,6 +289,7 @@ class Index extends Component
         $this->edit_send_date = null;
         $this->template_id = null;
         $this->attachments = [];
+        $this->showEditModal = false;
     }
 
     // Manual reload button
@@ -346,7 +356,7 @@ class Index extends Component
 
     public function updated($name, $value): void
     {
-        if (in_array($name, ['template_id', 'title', 'subject', 'body'], true)) {
+        if (in_array($name, ['template_id', 'title', 'subject', 'body', 'edit_title', 'edit_subject', 'edit_body'], true)) {
             $this->refreshPreview();
         }
     }
@@ -364,9 +374,11 @@ class Index extends Component
                 $this->preview_html = null;
                 return;
             }
-            $safeSubject = e((string) ($this->subject ?: 'Sample Subject'));
-            $safeTitle = e((string) ($this->title ?: 'Sample Title'));
-            $safeBody = nl2br(e((string) ($this->body ?: 'Your email body will appear here…')));
+            // Use edit fields if in edit mode, otherwise use create fields
+            $isEditMode = !empty($this->edit_note_id);
+            $safeSubject = e((string) ($isEditMode ? ($this->edit_subject ?: 'Sample Subject') : ($this->subject ?: 'Sample Subject')));
+            $safeTitle = e((string) ($isEditMode ? ($this->edit_title ?: 'Sample Title') : ($this->title ?: 'Sample Title')));
+            $safeBody = nl2br(e((string) ($isEditMode ? ($this->edit_body ?: 'Your email body will appear here…') : ($this->body ?: 'Your email body will appear here…'))));
             $this->preview_html = str_replace([
                 '{{subject}}',
                 '{{title}}',

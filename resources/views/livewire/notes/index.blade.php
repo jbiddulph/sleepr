@@ -1,4 +1,4 @@
-<div class="space-y-6" x-data="{ showModal: @entangle('showCreateModal') }">
+<div class="space-y-6" x-data="{ showCreateModal: @entangle('showCreateModal'), showEditModal: @entangle('showEditModal') }">
     @if($status)
         <div class="p-3 rounded bg-green-100 text-green-800">{{ $status }}</div>
     @endif
@@ -10,17 +10,17 @@
         </button>
     </div>
 
-    <!-- Modal -->
-    <div x-show="showModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" x-transition>
+    <!-- Create Note Modal -->
+    <div x-show="showCreateModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" x-transition>
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <!-- Backdrop -->
-            <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" @click="showModal = false"></div>
+            <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" @click="showCreateModal = false"></div>
             <!-- Modal Content -->
             <div class="relative inline-block align-bottom bg-white dark:bg-zinc-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-5xl sm:w-full">
                 <div class="bg-white dark:bg-zinc-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4 max-h-[90vh] overflow-y-auto">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-white">Create Note</h3>
-                        <button @click="showModal = false" wire:click="closeCreateModal" class="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-200">
+                        <button @click="showCreateModal = false" wire:click="closeCreateModal" class="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-200">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
@@ -132,7 +132,7 @@
         </div>
         <div class="flex gap-2 mt-4">
             <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save & Schedule</button>
-            <button type="button" @click="showModal = false" wire:click="closeCreateModal" class="px-4 py-2 border rounded bg-white dark:bg-zinc-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-zinc-600">Cancel</button>
+            <button type="button" @click="showCreateModal = false" wire:click="closeCreateModal" class="px-4 py-2 border rounded bg-white dark:bg-zinc-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-zinc-600">Cancel</button>
         </div>
                     </form>
                 </div>
@@ -149,78 +149,6 @@
                     $isFullySent = ($n->total_recipients ?? 0) > 0 && ($n->sent_recipients_count ?? 0) === ($n->total_recipients ?? 0);
                 @endphp
                 <div class="rounded p-3 border bg-white dark:bg-zinc-800 {{ $isScheduled ? 'border-yellow-400' : 'border-zinc-200 dark:border-zinc-700' }}">
-                    @if($edit_note_id === $n->id)
-                        <div class="space-y-3">
-                            <div>
-                                <label class="block text-sm font-medium">Title</label>
-                                <input type="text" wire:model.defer="edit_title" class="mt-1 w-full border rounded p-2" />
-                                @error('edit_title') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium">Subject</label>
-                                <input type="text" wire:model.defer="edit_subject" class="mt-1 w-full border rounded p-2" />
-                                @error('edit_subject') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
-                            </div>
-                            <div>
-                                <label class="block text-sm">Body</label>
-                                <textarea rows="4" wire:model.defer="edit_body" class="mt-1 w-full border rounded p-2"></textarea>
-                                @error('edit_body') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
-                            </div>
-                            <div>
-                                <label class="block text-sm">Send date (UTC)</label>
-                                <input type="datetime-local" step="600" wire:model.defer="edit_send_date" class="mt-1 w-full border rounded p-2" />
-                                @error('edit_send_date') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium">Email template</label>
-                                    <select wire:model="template_id" class="mt-1 w-full border rounded p-2">
-                                        <option value="">Default</option>
-                                        @foreach($this->templates as $tpl)
-                                            <option value="{{ $tpl['id'] }}">{{ $tpl['name'] }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium">Attachments from storage</label>
-                                    <div class="flex items-center gap-2 mt-1">
-                                        <button type="button" wire:click="fetchBucketFiles" class="px-3 py-1.5 border rounded">Load files</button>
-                                        <a href="{{ route('admin.files') }}" target="_blank" class="px-3 py-1.5 border rounded">Upload new file</a>
-                                        <span class="text-sm text-gray-600">{{ $bucketStatus }}</span>
-                                    </div>
-                                    <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-auto">
-                                        @foreach($bucketFiles as $f)
-                                            <div class="flex items-center justify-between border rounded p-2">
-                                                <div class="truncate"><span class="text-sm">{{ $f['name'] }}</span></div>
-                                                <button type="button" class="text-blue-600 text-sm" wire:click="addAttachment('{{ $f['url'] }}', '{{ addslashes($f['name']) }}', {{ (int)($f['size'] ?? 0) }})">Attach</button>
-                                            </div>
-                                        @endforeach
-                                        @if(empty($bucketFiles))
-                                            <div class="text-sm text-gray-500">No files loaded.</div>
-                                        @endif
-                                    </div>
-                                    @if(!empty($attachments))
-                                        <div class="mt-3">
-                                            <div class="text-sm font-medium mb-1">Selected attachments</div>
-                                            <div class="space-y-1">
-                                                @foreach($attachments as $a)
-                                                    <div class="flex items-center justify-between text-sm">
-                                                        <a href="{{ $a['url'] }}" target="_blank" class="text-blue-600 truncate">{{ $a['name'] ?? basename(parse_url($a['url'], PHP_URL_PATH) ?? '') }}</a>
-                                                        <button type="button" class="text-red-600" wire:click="removeAttachment('{{ $a['url'] }}')">Remove</button>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="flex gap-2">
-                                <button wire:click="updateNote" class="px-2 py-1 text-sm bg-blue-600 text-white rounded">Save</button>
-                                <button wire:click="cancelEdit" type="button" class="px-2 py-1 text-sm border rounded">Cancel</button>
-                                <button wire:click="deleteNote('{{ $n->id }}')" type="button" class="px-2 py-1 text-sm bg-red-600 text-white rounded" onclick="return confirm('Delete this note and its recipients?')">Delete</button>
-                            </div>
-                        </div>
-                    @else
                         <div class="flex items-start justify-between">
                             <div class="flex-1">
                                 <div class="font-semibold text-gray-900 dark:text-white">{{ $n->title }}</div>
@@ -280,11 +208,133 @@
                                 </svg>
                             </button>
                         </div>
-                    @endif
                 </div>
             @empty
                 <div class="text-gray-500">No notes yet.</div>
             @endforelse
+        </div>
+    </div>
+
+    <!-- Edit Note Modal -->
+    <div x-show="showEditModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" x-transition>
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Backdrop -->
+            <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" @click="showEditModal = false"></div>
+            <!-- Modal Content -->
+            <div class="relative inline-block align-bottom bg-white dark:bg-zinc-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-5xl sm:w-full">
+                <div class="bg-white dark:bg-zinc-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4 max-h-[90vh] overflow-y-auto">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white">Edit Note</h3>
+                        <button @click="showEditModal = false" wire:click="closeEditModal" class="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-200">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <form wire:submit.prevent="updateNote" class="space-y-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-900 dark:text-white">Title</label>
+            <input type="text" wire:model="edit_title" class="mt-1 w-full border rounded p-2 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white" />
+            @error('edit_title') <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</p> @enderror
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-900 dark:text-white">Subject</label>
+            <input type="text" wire:model="edit_subject" class="mt-1 w-full border rounded p-2 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white" />
+            @error('edit_subject') <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</p> @enderror
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-900 dark:text-white">Body</label>
+            <textarea rows="5" wire:model="edit_body" class="mt-1 w-full border rounded p-2 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"></textarea>
+            @error('edit_body') <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</p> @enderror
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-900 dark:text-white">Send date (UTC)</label>
+            <input type="datetime-local" step="600" wire:model="edit_send_date" class="mt-1 w-full border rounded p-2 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white" />
+            @error('edit_send_date') <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</p> @enderror
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-900 dark:text-white">Email template</label>
+                <select wire:model="template_id" class="mt-1 w-full border rounded p-2 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white">
+                    <option value="">Default</option>
+                    @foreach($this->templates as $tpl)
+                        <option value="{{ $tpl['id'] }}">{{ $tpl['name'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-900 dark:text-white">Attachments from storage</label>
+                <div class="flex items-center gap-2 mt-1">
+                    <button type="button" wire:click="fetchBucketFiles" class="px-3 py-1.5 border rounded bg-white dark:bg-zinc-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-zinc-600">Load files</button>
+                    <a href="{{ route('admin.files') }}" target="_blank" class="px-3 py-1.5 border rounded bg-white dark:bg-zinc-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-zinc-600">Upload new file</a>
+                    <span class="text-sm text-gray-600 dark:text-gray-300">{{ $bucketStatus }}</span>
+                </div>
+                <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-auto">
+                    @foreach($bucketFiles as $f)
+                        <div class="flex items-center justify-between border rounded p-2 bg-white dark:bg-zinc-700">
+                            <div class="truncate"><span class="text-sm text-gray-900 dark:text-white">{{ $f['name'] }}</span></div>
+                            <button type="button" class="text-blue-600 dark:text-blue-400 text-sm" wire:click="addAttachment('{{ $f['url'] }}', '{{ addslashes($f['name']) }}', {{ (int)($f['size'] ?? 0) }})">Attach</button>
+                        </div>
+                    @endforeach
+                    @if(empty($bucketFiles))
+                        <div class="text-sm text-gray-500 dark:text-gray-400">No files loaded.</div>
+                    @endif
+                </div>
+                @if(!empty($attachments))
+                    <div class="mt-3">
+                        <div class="text-sm font-medium mb-1 text-gray-900 dark:text-white">Selected attachments</div>
+                        <div class="space-y-1">
+                            @foreach($attachments as $a)
+                                <div class="flex items-center justify-between text-sm">
+                                    <a href="{{ $a['url'] }}" target="_blank" class="text-blue-600 dark:text-blue-400 truncate">{{ $a['name'] ?? basename(parse_url($a['url'], PHP_URL_PATH) ?? '') }}</a>
+                                    <button type="button" class="text-red-600 dark:text-red-400" wire:click="removeAttachment('{{ $a['url'] }}')">Remove</button>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+            </div>
+        </div>
+        <div>
+            <div class="flex items-center justify-between mb-1">
+                <div class="text-sm font-medium text-gray-900 dark:text-white">Template preview</div>
+                <button type="button" wire:click="reloadPreview" class="text-sm px-2 py-1 border rounded bg-white dark:bg-zinc-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-zinc-600">Reload preview</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <div class="text-xs text-gray-600 dark:text-gray-300 mb-1">Mobile</div>
+                    <div class="border rounded p-2 max-w-xs overflow-hidden bg-white dark:bg-zinc-700">
+                        @if($preview_html)
+                            <div class="prose prose-sm max-w-none dark:prose-invert">{!! $preview_html !!}</div>
+                        @else
+                            <div class="prose prose-sm max-w-none dark:prose-invert">
+                                <div class="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{{ \Illuminate\Support\Str::limit($edit_body ?: 'Your email body will appear here…', 500) }}</div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+                <div>
+                    <div class="text-xs text-gray-600 dark:text-gray-300 mb-1">Desktop</div>
+                    <div class="border rounded p-4 overflow-hidden bg-white dark:bg-zinc-700">
+                        @if($preview_html)
+                            <div class="prose max-w-none dark:prose-invert">{!! $preview_html !!}</div>
+                        @else
+                            <div class="prose max-w-none dark:prose-invert">
+                                <h3 class="font-semibold text-gray-900 dark:text-white">{{ $edit_title ?: 'Email title' }}</h3>
+                                <div class="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{{ \Illuminate\Support\Str::limit($edit_body ?: 'Your email body will appear here…', 1200) }}</div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="flex gap-2 mt-4">
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Update Note</button>
+            <button type="button" @click="showEditModal = false" wire:click="closeEditModal" class="px-4 py-2 border rounded bg-white dark:bg-zinc-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-zinc-600">Cancel</button>
+        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
     </div>
