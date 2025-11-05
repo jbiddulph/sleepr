@@ -1,0 +1,27 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('note_attachments', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->uuid('note_id');
+            $table->string('name');
+            $table->string('url');
+            $table->unsignedBigInteger('size')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('note_attachments');
+    }
+};
+
+
