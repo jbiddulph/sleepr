@@ -14,13 +14,13 @@
     <div x-show="showModal && !@js($edit_id)" x-cloak class="fixed inset-0 z-50 overflow-y-auto" x-transition>
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <!-- Backdrop -->
-            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showModal = false"></div>
+            <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" @click="showModal = false"></div>
             <!-- Modal Content -->
-            <div class="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-6xl sm:w-full">
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 max-h-[90vh] overflow-y-auto">
+            <div class="relative inline-block align-bottom bg-white dark:bg-zinc-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-6xl sm:w-full">
+                <div class="bg-white dark:bg-zinc-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4 max-h-[90vh] overflow-y-auto">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-medium text-gray-900">Create Template</h3>
-                        <button @click="showModal = false" wire:click="closeCreateModal" class="text-gray-400 hover:text-gray-600">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white">Create Template</h3>
+                        <button @click="showModal = false" wire:click="closeCreateModal" class="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-200">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
@@ -29,51 +29,51 @@
                     <form wire:submit.prevent="save" class="space-y-4">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
-                <label class="block text-sm font-medium">Name</label>
-                <input type="text" wire:model="name" class="mt-1 w-full border rounded p-2" />
-                @error('name') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                <label class="block text-sm font-medium text-gray-900 dark:text-white">Name</label>
+                <input type="text" wire:model="name" class="mt-1 w-full border rounded p-2 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white" />
+                @error('name') <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</p> @enderror
             </div>
             <div>
-                <label class="block text-sm font-medium">Slug</label>
-                <input type="text" wire:model="slug" class="mt-1 w-full border rounded p-2" placeholder="auto-generated from name if blank" />
-                @error('slug') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                <label class="block text-sm font-medium text-gray-900 dark:text-white">Slug</label>
+                <input type="text" wire:model="slug" class="mt-1 w-full border rounded p-2 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white" placeholder="auto-generated from name if blank" />
+                @error('slug') <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</p> @enderror
             </div>
         </div>
         <div>
-            <label class="block text-sm font-medium">HTML (use &#123;&#123;title&#125;&#125;, &#123;&#123;body&#125;&#125;, &#123;&#123;heart_url&#125;&#125;)</label>
-            <textarea rows="12" wire:model.lazy="html" class="mt-1 w-full border rounded p-2 font-mono text-sm"></textarea>
-            @error('html') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+            <label class="block text-sm font-medium text-gray-900 dark:text-white">HTML (use &#123;&#123;title&#125;&#125;, &#123;&#123;body&#125;&#125;, &#123;&#123;heart_url&#125;&#125;)</label>
+            <textarea rows="12" wire:model.lazy="html" class="mt-1 w-full border rounded p-2 font-mono text-sm bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"></textarea>
+            @error('html') <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</p> @enderror
         </div>
         <div class="flex items-center gap-2">
-            <label class="text-sm">Active</label>
+            <label class="text-sm text-gray-900 dark:text-white">Active</label>
             <input type="checkbox" wire:model="is_active" class="h-4 w-4" />
         </div>
         <div class="flex items-center gap-2 mt-4">
-            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Create Template</button>
-            <button type="button" @click="showModal = false" wire:click="closeCreateModal" class="px-4 py-2 border rounded">Cancel</button>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Create Template</button>
+            <button type="button" @click="showModal = false" wire:click="closeCreateModal" class="px-4 py-2 border rounded bg-white dark:bg-zinc-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-zinc-600">Cancel</button>
         </div>
                     </form>
 
                     <div class="mt-6">
-                        <h3 class="text-sm font-medium mb-2">Live preview</h3>
+                        <h3 class="text-sm font-medium mb-2 text-gray-900 dark:text-white">Live preview</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <div class="text-xs text-gray-600 mb-1">Mobile</div>
-                                <div class="border rounded p-2 max-w-xs overflow-hidden">
+                                <div class="text-xs text-gray-600 dark:text-gray-300 mb-1">Mobile</div>
+                                <div class="border rounded p-2 max-w-xs overflow-hidden bg-white dark:bg-zinc-700">
                                     @if(!empty($preview))
-                                        <div class="prose prose-sm max-w-none">{!! $preview !!}</div>
+                                        <div class="prose prose-sm max-w-none dark:prose-invert">{!! $preview !!}</div>
                                     @else
-                                        <div class="text-sm text-gray-500">Start typing your HTML above…</div>
+                                        <div class="text-sm text-gray-500 dark:text-gray-400">Start typing your HTML above…</div>
                                     @endif
                                 </div>
                             </div>
                             <div>
-                                <div class="text-xs text-gray-600 mb-1">Desktop</div>
-                                <div class="border rounded p-4 overflow-hidden">
+                                <div class="text-xs text-gray-600 dark:text-gray-300 mb-1">Desktop</div>
+                                <div class="border rounded p-4 overflow-hidden bg-white dark:bg-zinc-700">
                                     @if(!empty($preview))
-                                        <div class="prose max-w-none">{!! $preview !!}</div>
+                                        <div class="prose max-w-none dark:prose-invert">{!! $preview !!}</div>
                                     @else
-                                        <div class="text-sm text-gray-500">Start typing your HTML above…</div>
+                                        <div class="text-sm text-gray-500 dark:text-gray-400">Start typing your HTML above…</div>
                                     @endif
                                 </div>
                             </div>

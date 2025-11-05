@@ -14,13 +14,13 @@
     <div x-show="showModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" x-transition>
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <!-- Backdrop -->
-            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showModal = false"></div>
+            <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" @click="showModal = false"></div>
             <!-- Modal Content -->
-            <div class="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-5xl sm:w-full">
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 max-h-[90vh] overflow-y-auto">
+            <div class="relative inline-block align-bottom bg-white dark:bg-zinc-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-5xl sm:w-full">
+                <div class="bg-white dark:bg-zinc-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4 max-h-[90vh] overflow-y-auto">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-medium text-gray-900">Create Note</h3>
-                        <button @click="showModal = false" wire:click="closeCreateModal" class="text-gray-400 hover:text-gray-600">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white">Create Note</h3>
+                        <button @click="showModal = false" wire:click="closeCreateModal" class="text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-200">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
@@ -28,36 +28,36 @@
                     </div>
                     <form wire:submit.prevent="save" class="space-y-4">
         <div>
-            <label class="block text-sm font-medium">Title</label>
-            <input type="text" wire:model="title" class="mt-1 w-full border rounded p-2" />
-            @error('title') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+            <label class="block text-sm font-medium text-gray-900 dark:text-white">Title</label>
+            <input type="text" wire:model="title" class="mt-1 w-full border rounded p-2 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white" />
+            @error('title') <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</p> @enderror
         </div>
         <div>
-            <label class="block text-sm font-medium">Subject</label>
-            <input type="text" wire:model="subject" class="mt-1 w-full border rounded p-2" />
-            @error('subject') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+            <label class="block text-sm font-medium text-gray-900 dark:text-white">Subject</label>
+            <input type="text" wire:model="subject" class="mt-1 w-full border rounded p-2 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white" />
+            @error('subject') <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</p> @enderror
         </div>
         <div>
-            <label class="block text-sm font-medium">Body</label>
-            <textarea rows="5" wire:model="body" class="mt-1 w-full border rounded p-2"></textarea>
-            @error('body') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+            <label class="block text-sm font-medium text-gray-900 dark:text-white">Body</label>
+            <textarea rows="5" wire:model="body" class="mt-1 w-full border rounded p-2 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"></textarea>
+            @error('body') <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</p> @enderror
         </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-                <label class="block text-sm font-medium">Send date (UTC)</label>
-                <input type="datetime-local" step="600" wire:model="send_date" class="mt-1 w-full border rounded p-2" />
-                @error('send_date') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                <label class="block text-sm font-medium text-gray-900 dark:text-white">Send date (UTC)</label>
+                <input type="datetime-local" step="600" wire:model="send_date" class="mt-1 w-full border rounded p-2 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white" />
+                @error('send_date') <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</p> @enderror
             </div>
             <div>
-                <label class="block text-sm font-medium">Recipient emails (comma or newline separated)</label>
-                <textarea rows="3" wire:model="recipients" class="mt-1 w-full border rounded p-2" placeholder="name@example.com, other@example.com"></textarea>
-                @error('recipients') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                <label class="block text-sm font-medium text-gray-900 dark:text-white">Recipient emails (comma or newline separated)</label>
+                <textarea rows="3" wire:model="recipients" class="mt-1 w-full border rounded p-2 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white" placeholder="name@example.com, other@example.com"></textarea>
+                @error('recipients') <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</p> @enderror
             </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-                <label class="block text-sm font-medium">Email template</label>
-                <select wire:model="template_id" class="mt-1 w-full border rounded p-2">
+                <label class="block text-sm font-medium text-gray-900 dark:text-white">Email template</label>
+                <select wire:model="template_id" class="mt-1 w-full border rounded p-2 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white">
                     <option value="">Default</option>
                     @foreach($this->templates as $tpl)
                         <option value="{{ $tpl['id'] }}">{{ $tpl['name'] }}</option>
@@ -65,31 +65,31 @@
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium">Attachments from storage</label>
+                <label class="block text-sm font-medium text-gray-900 dark:text-white">Attachments from storage</label>
                 <div class="flex items-center gap-2 mt-1">
-                    <button type="button" wire:click="fetchBucketFiles" class="px-3 py-1.5 border rounded">Load files</button>
-                    <a href="{{ route('admin.files') }}" target="_blank" class="px-3 py-1.5 border rounded">Upload new file</a>
-                    <span class="text-sm text-gray-600">{{ $bucketStatus }}</span>
+                    <button type="button" wire:click="fetchBucketFiles" class="px-3 py-1.5 border rounded bg-white dark:bg-zinc-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-zinc-600">Load files</button>
+                    <a href="{{ route('admin.files') }}" target="_blank" class="px-3 py-1.5 border rounded bg-white dark:bg-zinc-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-zinc-600">Upload new file</a>
+                    <span class="text-sm text-gray-600 dark:text-gray-300">{{ $bucketStatus }}</span>
                 </div>
                 <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-auto">
                     @foreach($bucketFiles as $f)
-                        <div class="flex items-center justify-between border rounded p-2">
-                            <div class="truncate"><span class="text-sm">{{ $f['name'] }}</span></div>
-                            <button type="button" class="text-blue-600 text-sm" wire:click="addAttachment('{{ $f['url'] }}', '{{ addslashes($f['name']) }}', {{ (int)($f['size'] ?? 0) }})">Attach</button>
+                        <div class="flex items-center justify-between border rounded p-2 bg-white dark:bg-zinc-700">
+                            <div class="truncate"><span class="text-sm text-gray-900 dark:text-white">{{ $f['name'] }}</span></div>
+                            <button type="button" class="text-blue-600 dark:text-blue-400 text-sm" wire:click="addAttachment('{{ $f['url'] }}', '{{ addslashes($f['name']) }}', {{ (int)($f['size'] ?? 0) }})">Attach</button>
                         </div>
                     @endforeach
                     @if(empty($bucketFiles))
-                        <div class="text-sm text-gray-500">No files loaded.</div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">No files loaded.</div>
                     @endif
                 </div>
                 @if(!empty($attachments))
                     <div class="mt-3">
-                        <div class="text-sm font-medium mb-1">Selected attachments</div>
+                        <div class="text-sm font-medium mb-1 text-gray-900 dark:text-white">Selected attachments</div>
                         <div class="space-y-1">
                             @foreach($attachments as $a)
                                 <div class="flex items-center justify-between text-sm">
-                                    <a href="{{ $a['url'] }}" target="_blank" class="text-blue-600 truncate">{{ $a['name'] ?? basename(parse_url($a['url'], PHP_URL_PATH) ?? '') }}</a>
-                                    <button type="button" class="text-red-600" wire:click="removeAttachment('{{ $a['url'] }}')">Remove</button>
+                                    <a href="{{ $a['url'] }}" target="_blank" class="text-blue-600 dark:text-blue-400 truncate">{{ $a['name'] ?? basename(parse_url($a['url'], PHP_URL_PATH) ?? '') }}</a>
+                                    <button type="button" class="text-red-600 dark:text-red-400" wire:click="removeAttachment('{{ $a['url'] }}')">Remove</button>
                                 </div>
                             @endforeach
                         </div>
@@ -99,31 +99,31 @@
         </div>
         <div>
             <div class="flex items-center justify-between mb-1">
-                <div class="text-sm font-medium">Template preview</div>
-                <button type="button" wire:click="reloadPreview" class="text-sm px-2 py-1 border rounded">Reload preview</button>
+                <div class="text-sm font-medium text-gray-900 dark:text-white">Template preview</div>
+                <button type="button" wire:click="reloadPreview" class="text-sm px-2 py-1 border rounded bg-white dark:bg-zinc-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-zinc-600">Reload preview</button>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <div class="text-xs text-gray-600 mb-1">Mobile</div>
-                    <div class="border rounded p-2 max-w-xs overflow-hidden">
+                    <div class="text-xs text-gray-600 dark:text-gray-300 mb-1">Mobile</div>
+                    <div class="border rounded p-2 max-w-xs overflow-hidden bg-white dark:bg-zinc-700">
                         @if($preview_html)
-                            <div class="prose prose-sm max-w-none">{!! $preview_html !!}</div>
+                            <div class="prose prose-sm max-w-none dark:prose-invert">{!! $preview_html !!}</div>
                         @else
-                            <div class="prose prose-sm max-w-none">
-                                <div class="text-gray-900 whitespace-pre-wrap">{{ \Illuminate\Support\Str::limit($body ?: 'Your email body will appear here…', 500) }}</div>
+                            <div class="prose prose-sm max-w-none dark:prose-invert">
+                                <div class="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{{ \Illuminate\Support\Str::limit($body ?: 'Your email body will appear here…', 500) }}</div>
                             </div>
                         @endif
                     </div>
                 </div>
                 <div>
-                    <div class="text-xs text-gray-600 mb-1">Desktop</div>
-                    <div class="border rounded p-4 overflow-hidden">
+                    <div class="text-xs text-gray-600 dark:text-gray-300 mb-1">Desktop</div>
+                    <div class="border rounded p-4 overflow-hidden bg-white dark:bg-zinc-700">
                         @if($preview_html)
-                            <div class="prose max-w-none">{!! $preview_html !!}</div>
+                            <div class="prose max-w-none dark:prose-invert">{!! $preview_html !!}</div>
                         @else
-                            <div class="prose max-w-none">
-                                <h3 class="font-semibold">{{ $title ?: 'Email title' }}</h3>
-                                <div class="text-gray-900 whitespace-pre-wrap">{{ \Illuminate\Support\Str::limit($body ?: 'Your email body will appear here…', 1200) }}</div>
+                            <div class="prose max-w-none dark:prose-invert">
+                                <h3 class="font-semibold text-gray-900 dark:text-white">{{ $title ?: 'Email title' }}</h3>
+                                <div class="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{{ \Illuminate\Support\Str::limit($body ?: 'Your email body will appear here…', 1200) }}</div>
                             </div>
                         @endif
                     </div>
@@ -131,8 +131,8 @@
             </div>
         </div>
         <div class="flex gap-2 mt-4">
-            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Save & Schedule</button>
-            <button type="button" @click="showModal = false" wire:click="closeCreateModal" class="px-4 py-2 border rounded">Cancel</button>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save & Schedule</button>
+            <button type="button" @click="showModal = false" wire:click="closeCreateModal" class="px-4 py-2 border rounded bg-white dark:bg-zinc-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-zinc-600">Cancel</button>
         </div>
                     </form>
                 </div>
