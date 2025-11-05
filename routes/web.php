@@ -34,8 +34,8 @@ Route::middleware(['auth'])->group(function () {
         )
         ->name('two-factor.show');
 
-    // Notes UI (Livewire)
-    Route::get('/notes', NotesIndex::class)->name('notes.index');
+    // Notes UI page (Blade view wrapping Livewire component)
+    Route::view('/notes', 'notes.index')->name('notes.index');
 });
 
 // Public endpoint for note hearts via token in email

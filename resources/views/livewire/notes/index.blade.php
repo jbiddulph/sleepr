@@ -1,4 +1,3 @@
-<x-layouts.app :title="__('Notes')">
 <div class="space-y-6">
     @if($status)
         <div class="p-3 rounded bg-green-100 text-green-800">{{ $status }}</div>
@@ -49,6 +48,5 @@
     </div>
     </div>
 </div>
-</x-layouts.app>
 
 
