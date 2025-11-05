@@ -63,7 +63,7 @@ class Index extends Component
         $notes = Note::query()
             ->where('user_id', optional(Auth::user())->id)
             ->latest()
-            .limit(25)
+            ->limit(25)
             ->get();
 
         return view('livewire.notes.index', [

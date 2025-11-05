@@ -12,8 +12,11 @@
             </a>
 
             <flux:navbar class="-mb-px max-lg:hidden">
-                <flux:navbar.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
+                <flux:navbar item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                     {{ __('Dashboard') }}
+                </flux:navbar>
+                <flux:navbar.item icon="paper-airplane" :href="route('notes.index')" :current="request()->routeIs('notes.*')" wire:navigate>
+                    {{ __('Notes') }}
                 </flux:navbar.item>
             </flux:navbar>
 
@@ -99,7 +102,10 @@
             <flux:navlist variant="outline">
                 <flux:navlist.group :heading="__('Platform')">
                     <flux:navlist.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
-                    {{ __('Dashboard') }}
+                        {{ __('Dashboard') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="paper-airplane" :href="route('notes.index')" :current="request()->routeIs('notes.*')" wire:navigate>
+                        {{ __('Notes') }}
                     </flux:navlist.item>
                 </flux:navlist.group>
             </flux:navlist>
