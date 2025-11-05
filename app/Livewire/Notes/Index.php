@@ -226,6 +226,51 @@ class Index extends Component
         }
     }
 
+    public function copyNote(string $noteId): void
+    {
+        $user = Auth::user();
+        $originalNote = Note::with(['recipients', 'attachments'])
+            ->whereKey($noteId)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        // Create new note with [COPY] prefix
+        $newNote = Note::create([
+            'id' => (string) Str::uuid(),
+            'user_id' => $user->id,
+            'title' => '[COPY] ' . $originalNote->title,
+            'subject' => $originalNote->subject,
+            'body' => $originalNote->body,
+            'send_date' => $originalNote->send_date,
+            'heart_count' => 0,
+            'is_published' => true,
+            'template_id' => $originalNote->template_id,
+        ]);
+
+        // Copy recipients
+        foreach ($originalNote->recipients as $recipient) {
+            NoteRecipient::create([
+                'note_id' => $newNote->id,
+                'email' => $recipient->email,
+                'token' => Str::uuid(),
+                'send_date' => $recipient->send_date ?? $originalNote->send_date,
+            ]);
+        }
+
+        // Copy attachments
+        foreach ($originalNote->attachments as $attachment) {
+            NoteAttachment::create([
+                'id' => (string) Str::uuid(),
+                'note_id' => $newNote->id,
+                'name' => $attachment->name,
+                'url' => $attachment->url,
+                'size' => $attachment->size,
+            ]);
+        }
+
+        $this->status = __('Note copied successfully.');
+    }
+
     private function resetEditState(): void
     {
         $this->edit_note_id = null;

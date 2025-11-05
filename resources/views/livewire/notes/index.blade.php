@@ -273,6 +273,13 @@
                                 </button>
                             </div>
                         </div>
+                        <div class="flex justify-end mt-3 pt-2 border-t border-gray-200 dark:border-zinc-700">
+                            <button wire:click="copyNote('{{ $n->id }}')" class="p-2 border rounded bg-white dark:bg-zinc-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-zinc-600" title="Copy Note">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                            </button>
+                        </div>
                     @endif
                 </div>
             @empty
