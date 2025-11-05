@@ -1,8 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\NoteHeartController;
 use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
+use App\Http\Controllers\NoteHeartController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -29,4 +31,13 @@ Route::middleware(['auth'])->group(function () {
             ),
         )
         ->name('two-factor.show');
+
+    // Notes UI (Livewire)
+    Route\:get('/notes', \App\Livewire\Notes\Index::class)
+        ->name('notes.index');
 });
+
+// Public endpoint for note hearts via token in email
+Route::get('/h/{token}', NoteHeartController::class)->name('notes.heart');
+// Public endpoint for note hearts via token in email
+Route::get('/h/{token}', NoteHeartController::class)->name('notes.heart');
