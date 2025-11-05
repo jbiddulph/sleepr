@@ -24,6 +24,32 @@ class Templates extends Component
 
     public ?string $edit_id = null;
 
+    private function compilePreview(): string
+    {
+        $raw = (string) $this->html;
+        if ($raw === '') {
+            return '';
+        }
+        $subject = e('Sample Subject');
+        $title = e('Sample Title');
+        $body = nl2br(e("Sample body goes here.\nYou can use multiple lines."));
+        $heart = '#';
+        $email = e('recipient@example.com');
+        return str_replace([
+            '{{subject}}',
+            '{{title}}',
+            '{{body}}',
+            '{{heart_url}}',
+            '{{recipient_email}}',
+        ], [
+            $subject,
+            $title,
+            $body,
+            $heart,
+            $email,
+        ], $raw);
+    }
+
     public function save(): void
     {
         $this->validate();
@@ -88,8 +114,10 @@ class Templates extends Component
     public function render()
     {
         $templates = Template::query()->latest()->paginate(10);
+        $preview = $this->compilePreview();
         return view('livewire.admin.templates', [
             'templates' => $templates,
+            'preview' => $preview,
         ]);
     }
 }

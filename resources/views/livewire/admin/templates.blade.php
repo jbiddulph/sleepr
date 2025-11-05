@@ -4,7 +4,7 @@
     @endif
 
     <form wire:submit.prevent="save" class="space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
                 <label class="block text-sm font-medium">Name</label>
                 <input type="text" wire:model="name" class="mt-1 w-full border rounded p-2" />
@@ -32,6 +32,32 @@
             @endif
         </div>
     </form>
+
+    <div>
+        <h3 class="text-sm font-medium mb-2">Live preview</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <div class="text-xs text-gray-600 mb-1">Mobile</div>
+                <div class="border rounded p-2 max-w-xs overflow-hidden">
+                    @if(!empty($preview))
+                        <div class="prose prose-sm max-w-none">{!! $preview !!}</div>
+                    @else
+                        <div class="text-sm text-gray-500">Start typing your HTML above…</div>
+                    @endif
+                </div>
+            </div>
+            <div>
+                <div class="text-xs text-gray-600 mb-1">Desktop</div>
+                <div class="border rounded p-4 overflow-hidden">
+                    @if(!empty($preview))
+                        <div class="prose max-w-none">{!! $preview !!}</div>
+                    @else
+                        <div class="text-sm text-gray-500">Start typing your HTML above…</div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div>
         <h2 class="text-lg font-semibold mb-2">Templates</h2>
