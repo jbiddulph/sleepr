@@ -33,6 +33,9 @@ class Index extends Component
 
     public string $status = '';
 
+    // Modal state
+    public bool $showCreateModal = false;
+
     // Template selection
     #[Validate('nullable|uuid|exists:templates,id')]
     public ?string $template_id = null;
@@ -111,7 +114,19 @@ class Index extends Component
         }
 
         $this->reset(['title', 'subject', 'body', 'send_date', 'recipients', 'template_id', 'attachments']);
+        $this->showCreateModal = false;
         $this->status = 'Note created. Scheduled emails will send automatically.';
+    }
+
+    public function openCreateModal(): void
+    {
+        $this->showCreateModal = true;
+    }
+
+    public function closeCreateModal(): void
+    {
+        $this->showCreateModal = false;
+        $this->reset(['title', 'subject', 'body', 'send_date', 'recipients', 'template_id', 'attachments']);
     }
 
     public function render()

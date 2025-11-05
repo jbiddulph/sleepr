@@ -24,6 +24,9 @@ class Templates extends Component
 
     public ?string $edit_id = null;
 
+    // Modal state
+    public bool $showCreateModal = false;
+
     private function compilePreview(): string
     {
         $raw = (string) $this->html;
@@ -75,6 +78,18 @@ class Templates extends Component
             $this->status = __('Template created.');
         }
 
+        $this->showCreateModal = false;
+        $this->resetForm();
+    }
+
+    public function openCreateModal(): void
+    {
+        $this->showCreateModal = true;
+    }
+
+    public function closeCreateModal(): void
+    {
+        $this->showCreateModal = false;
         $this->resetForm();
     }
 
@@ -86,6 +101,7 @@ class Templates extends Component
         $this->slug = (string) $tpl->slug;
         $this->html = (string) $tpl->html;
         $this->is_active = (bool) $tpl->is_active;
+        $this->showCreateModal = false; // Close create modal if editing
     }
 
     public function cancel(): void

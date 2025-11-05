@@ -1,9 +1,30 @@
-<div class="space-y-6">
+<div class="space-y-6" x-data="{ showModal: @entangle('showCreateModal') }">
     @if($status)
         <div class="p-3 rounded bg-green-100 text-green-800">{{ $status }}</div>
     @endif
 
-    <form wire:submit.prevent="save" class="space-y-4">
+    <!-- Create Note Button -->
+    <div class="flex justify-center items-center" style="margin: 20px;">
+        <button wire:click="openCreateModal" class="px-8 py-4 text-lg font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+            Create Note
+        </button>
+    </div>
+
+    <!-- Modal -->
+    <div x-show="showModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" style="display: none;" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" @click="showModal = false"></div>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-5xl sm:w-full" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 max-h-[90vh] overflow-y-auto">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">Create Note</h3>
+                        <button @click="showModal = false" wire:click="closeCreateModal" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <form wire:submit.prevent="save" class="space-y-4">
         <div>
             <label class="block text-sm font-medium">Title</label>
             <input type="text" wire:model="title" class="mt-1 w-full border rounded p-2" />
@@ -107,10 +128,15 @@
                 </div>
             </div>
         </div>
-        <div>
+        <div class="flex gap-2 mt-4">
             <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Save & Schedule</button>
+            <button type="button" @click="showModal = false" wire:click="closeCreateModal" class="px-4 py-2 border rounded">Cancel</button>
         </div>
-    </form>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div wire:poll.5s>
         <h2 class="text-lg font-semibold mb-2">Your recent notes</h2>
