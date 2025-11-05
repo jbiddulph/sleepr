@@ -56,6 +56,7 @@ class Index extends Component
     public string $edit_subject = '';
     public string $edit_body = '';
     public ?string $edit_send_date = null; // datetime-local string or null
+    public string $edit_recipients = ''; // comma or newline separated emails
 
     public function mount(): void
     {
@@ -94,6 +95,10 @@ class Index extends Component
             ->map(fn ($e) => trim($e))
             ->filter(fn ($e) => filter_var($e, FILTER_VALIDATE_EMAIL))
             ->unique();
+
+        // Save recipients string to note for reporting
+        $note->recipients = $emails->join(', ');
+        $note->save();
 
         foreach ($emails as $email) {
             NoteRecipient::firstOrCreate(
@@ -158,7 +163,7 @@ class Index extends Component
 
     public function startEdit(string $noteId): void
     {
-        $note = Note::with('attachments')->whereKey($noteId)->where('user_id', Auth::id())->firstOrFail();
+        $note = Note::with(['attachments', 'recipients'])->whereKey($noteId)->where('user_id', Auth::id())->firstOrFail();
         $this->edit_note_id = $note->getKey();
         $this->edit_title = (string) $note->title;
         $this->edit_subject = (string) ($note->subject ?? '');
@@ -171,6 +176,12 @@ class Index extends Component
             'url' => $a->url,
             'size' => $a->size,
         ])->values()->all();
+        // Load existing recipients - use recipients field if available, otherwise fall back to relationship
+        if (!empty($note->recipients)) {
+            $this->edit_recipients = $note->recipients;
+        } else {
+            $this->edit_recipients = $note->recipients()->pluck('email')->join(', ');
+        }
         $this->showEditModal = true;
         $this->refreshPreview();
     }
@@ -197,15 +208,57 @@ class Index extends Component
             'edit_subject' => ['required','string','min:3'],
             'edit_body' => ['required','string','min:3'],
             'edit_send_date' => ['nullable','date'],
+            'edit_recipients' => ['required','string'],
         ]);
 
-        $note = Note::with('attachments')->whereKey($this->edit_note_id)->where('user_id', Auth::id())->firstOrFail();
+        // Enforce 10-minute increments on server too
+        if ($this->edit_send_date) {
+            $dt = Carbon::parse($this->edit_send_date, 'UTC');
+            if ($dt->minute % 10 !== 0) {
+                $this->addError('edit_send_date', __('Send time must be in 10-minute increments (00,10,20,30,40,50).'));
+                return;
+            }
+        }
+
+        $note = Note::with(['attachments', 'recipients'])->whereKey($this->edit_note_id)->where('user_id', Auth::id())->firstOrFail();
         $note->title = $this->edit_title;
         $note->subject = $this->edit_subject;
         $note->body = $this->edit_body;
         $note->send_date = $this->edit_send_date; // stored as-is; recipients use their own send_date
         $note->template_id = $this->template_id;
         $note->save();
+
+        // Update recipients: parse emails, add new ones, remove ones no longer in the list
+        $emails = collect(preg_split('/[\n,]+/', $this->edit_recipients))
+            ->map(fn ($e) => trim($e))
+            ->filter(fn ($e) => filter_var($e, FILTER_VALIDATE_EMAIL))
+            ->unique();
+
+        // Save recipients string to note for reporting
+        $note->recipients = $emails->join(', ');
+        $note->save();
+
+        // Get existing recipient emails
+        $existingEmails = $note->recipients()->pluck('email')->toArray();
+
+        // Add new recipients
+        foreach ($emails as $email) {
+            if (!in_array($email, $existingEmails, true)) {
+                NoteRecipient::create([
+                    'note_id' => $note->id,
+                    'email' => $email,
+                    'token' => Str::uuid(),
+                    'send_date' => $this->edit_send_date,
+                ]);
+            }
+        }
+
+        // Remove recipients that are no longer in the list (only if not sent yet)
+        foreach ($note->recipients()->get() as $recipient) {
+            if (!in_array($recipient->email, $emails->toArray(), true) && !$recipient->sent_at) {
+                $recipient->delete();
+            }
+        }
 
         // Replace attachments with current selection
         $note->attachments()->delete();
@@ -243,6 +296,10 @@ class Index extends Component
             ->where('user_id', $user->id)
             ->firstOrFail();
 
+        // Get recipient emails from original note
+        $recipientEmails = $originalNote->recipients->pluck('email')->toArray();
+        $recipientsString = implode(', ', $recipientEmails);
+
         // Create new note with [COPY] prefix
         $newNote = Note::create([
             'id' => (string) Str::uuid(),
@@ -250,6 +307,7 @@ class Index extends Component
             'title' => '[COPY] ' . $originalNote->title,
             'subject' => $originalNote->subject,
             'body' => $originalNote->body,
+            'recipients' => $recipientsString,
             'send_date' => $originalNote->send_date,
             'heart_count' => 0,
             'is_published' => true,
@@ -287,6 +345,7 @@ class Index extends Component
         $this->edit_subject = '';
         $this->edit_body = '';
         $this->edit_send_date = null;
+        $this->edit_recipients = '';
         $this->template_id = null;
         $this->attachments = [];
         $this->showEditModal = false;

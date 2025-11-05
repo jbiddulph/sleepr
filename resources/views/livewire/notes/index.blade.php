@@ -247,10 +247,17 @@
             <textarea rows="5" wire:model="edit_body" class="mt-1 w-full border rounded p-2 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"></textarea>
             @error('edit_body') <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</p> @enderror
         </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-900 dark:text-white">Send date (UTC)</label>
-            <input type="datetime-local" step="600" wire:model="edit_send_date" class="mt-1 w-full border rounded p-2 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white" />
-            @error('edit_send_date') <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</p> @enderror
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-900 dark:text-white">Send date (UTC)</label>
+                <input type="datetime-local" step="600" wire:model="edit_send_date" class="mt-1 w-full border rounded p-2 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white" />
+                @error('edit_send_date') <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</p> @enderror
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-900 dark:text-white">Recipient emails (comma or newline separated)</label>
+                <textarea rows="3" wire:model="edit_recipients" class="mt-1 w-full border rounded p-2 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white" placeholder="name@example.com, other@example.com"></textarea>
+                @error('edit_recipients') <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</p> @enderror
+            </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
