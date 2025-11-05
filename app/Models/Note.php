@@ -12,6 +12,11 @@ class Note extends Model
     use HasFactory, HasUuid;
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'send_date' => 'datetime',
+        'is_published' => 'boolean',
+    ];
+
     // No cast for 'template' – it's a relation
 
     public function user(): BelongsTo

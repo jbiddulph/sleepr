@@ -22,12 +22,17 @@ class NoteMail extends Mailable implements ShouldQueue
     {
         $heartUrl = route('notes.heart', ['token' => $this->recipient->token]);
 
+        // Get subject - check if it exists and is not empty after trimming
+        // Use direct property access to ensure we get the actual value
+        $subjectValue = $this->note->subject ?? null;
+        $subject = $subjectValue !== null && $subjectValue !== '' ? trim((string) $subjectValue) : '';
+        $emailSubject = $subject !== '' ? $subject : 'A note for you';
+
         $view = 'emails.note';
         if ($this->note->template && method_exists($this->note->template, 'getAttribute')) {
             $slug = (string) ($this->note->template->slug ?? '');
             // 1) If a Blade view exists for the template slug, use it (e.g. resources/views/emails/{slug}.blade.php)
             if ($slug && \Illuminate\Support\Facades\View::exists('emails.'.$slug)) {
-                $emailSubject = !empty($this->note->subject) ? $this->note->subject : 'A note for you';
                 $mailable = $this->subject($emailSubject)
                     ->view('emails.'.$slug, [
                         'note' => $this->note,
@@ -38,7 +43,7 @@ class NoteMail extends Mailable implements ShouldQueue
                 // 2) Otherwise, render stored HTML from DB with placeholders
                 $rawHtml = (string) ($this->note->template->html ?? '');
                 if ($rawHtml !== '') {
-                    $safeSubject = e((string) ($this->note->subject ?? ''));
+                    $safeSubject = e($subject !== '' ? $subject : 'A note for you');
                     $safeTitle = e((string) ($this->note->title ?? ''));
                     $safeBody = nl2br(e((string) ($this->note->body ?? '')));
                     $html = str_replace([
@@ -55,11 +60,9 @@ class NoteMail extends Mailable implements ShouldQueue
                         e($this->recipient->email),
                     ], $rawHtml);
 
-                    $emailSubject = !empty($this->note->subject) ? $this->note->subject : 'A note for you';
                     $mailable = $this->subject($emailSubject)->html($html);
                 } else {
                     // 3) Fallback to default view
-                    $emailSubject = !empty($this->note->subject) ? $this->note->subject : 'A note for you';
                     $mailable = $this->subject($emailSubject)
                         ->view($view, [
                             'note' => $this->note,
@@ -69,7 +72,6 @@ class NoteMail extends Mailable implements ShouldQueue
                 }
             }
         } else {
-            $emailSubject = !empty($this->note->subject) ? $this->note->subject : 'A note for you';
             $mailable = $this->subject($emailSubject)
                 ->view($view, [
                     'note' => $this->note,
