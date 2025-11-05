@@ -4,7 +4,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\NoteHeartController;
 use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
-use App\Http\Controllers\NoteHeartController;
+use App\Livewire\Notes\Index as NotesIndex;
+use App\Livewire\Admin\Dashboard as AdminDashboard;
+use App\Livewire\Admin\Recipients as AdminRecipients;
 
 Route::get('/', function () {
     return view('welcome');
@@ -33,11 +35,14 @@ Route::middleware(['auth'])->group(function () {
         ->name('two-factor.show');
 
     // Notes UI (Livewire)
-    Route\:get('/notes', \App\Livewire\Notes\Index::class)
-        ->name('notes.index');
+    Route::get('/notes', NotesIndex::class)->name('notes.index');
 });
 
 // Public endpoint for note hearts via token in email
 Route::get('/h/{token}', NoteHeartController::class)->name('notes.heart');
-// Public endpoint for note hearts via token in email
-Route::get('/h/{token}', NoteHeartController::class)->name('notes.heart');
+
+// Admin-only area
+Route::middleware(['auth', 'can:admin'])->group(function () {
+    Route::get('/admin', AdminDashboard::class)->name('admin.dashboard');
+    Route::get('/admin/recipients', AdminRecipients::class)->name('admin.recipients');
+});
