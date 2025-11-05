@@ -37,9 +37,6 @@ class Templates extends Component
                 'html' => $this->html,
                 'is_active' => $this->is_active,
             ])->save();
-            if ($this->is_active) {
-                Template::where('id', '!=', $tpl->id)->update(['is_active' => false]);
-            }
             $this->status = __('Template updated.');
         } else {
             $tpl = Template::create([
@@ -49,9 +46,6 @@ class Templates extends Component
                 'html' => $this->html,
                 'is_active' => $this->is_active,
             ]);
-            if ($this->is_active) {
-                Template::where('id', '!=', $tpl->id)->update(['is_active' => false]);
-            }
             $this->status = __('Template created.');
         }
 

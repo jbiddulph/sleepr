@@ -51,7 +51,7 @@ class Index extends Component
 
     public function mount(): void
     {
-        $this->templates = Template::query()->where('is_active', true)->orderBy('name')->get(['id','name'])->toArray();
+        $this->templates = Template::query()->orderBy('name')->get(['id','name'])->toArray();
         $this->refreshPreview();
     }
 
