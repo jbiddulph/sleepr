@@ -215,20 +215,18 @@
                                     @endif
                                 </div>
                             </div>
-                            <div class="flex items-center gap-2 ml-2">
-                                <button wire:click="startEdit('{{ $n->id }}')" class="p-2 border rounded bg-white dark:bg-zinc-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-zinc-600" title="Edit">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                    </svg>
-                                </button>
-                                <button wire:click="deleteNote('{{ $n->id }}')" class="p-2 bg-red-600 text-white rounded hover:bg-red-700" onclick="return confirm('Delete this note and its recipients?')" title="Delete">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                </button>
-                            </div>
                         </div>
-                        <div class="flex justify-end mt-3 pt-2 border-t border-gray-200 dark:border-zinc-700">
+                        <div class="flex justify-end items-center gap-2 mt-3 pt-2 border-t border-gray-200 dark:border-zinc-700">
+                            <button wire:click="startEdit('{{ $n->id }}')" class="p-2 border rounded bg-orange-300 dark:bg-orange-400 text-gray-900 dark:text-white hover:bg-orange-400 dark:hover:bg-orange-500" title="Edit">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                            </button>
+                            <button wire:click="deleteNote('{{ $n->id }}')" class="p-2 bg-red-600 text-white rounded hover:bg-red-700" onclick="return confirm('Delete this note and its recipients?')" title="Delete">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
                             <button wire:click="copyNote('{{ $n->id }}')" class="p-2 border rounded bg-white dark:bg-zinc-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-zinc-600" title="Copy Note">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
