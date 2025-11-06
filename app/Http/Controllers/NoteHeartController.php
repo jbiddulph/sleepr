@@ -20,7 +20,10 @@ class NoteHeartController
             }
         }
 
-        return redirect()->route('dashboard')->with('status', 'Thanks for the ❤️');
+        return response()->view('notes.thankyou', [
+            'note' => $note,
+            'recipient' => $recipient,
+        ]);
     }
 }
 
