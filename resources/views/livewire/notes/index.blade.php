@@ -141,7 +141,30 @@
     </div>
 
     <div wire:poll.5s>
-        <h2 class="text-lg font-semibold mb-2">Your recent notes</h2>
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-semibold">Your recent notes</h2>
+            <div class="inline-flex rounded-md shadow-sm overflow-hidden border border-zinc-200 dark:border-zinc-700">
+                <button type="button"
+                        wire:click="$set('filter','scheduled')"
+                        class="px-3 py-1.5 text-sm focus:outline-none transition
+                               {{ $filter === 'scheduled' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200' }}">
+                    Scheduled
+                </button>
+                <button type="button"
+                        wire:click="$set('filter','hearted')"
+                        class="px-3 py-1.5 text-sm border-l border-zinc-200 dark:border-zinc-700 focus:outline-none transition
+                               {{ $filter === 'hearted' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200' }}">
+                    ❤️&nbsp;Liked
+                </button>
+                <button type="button"
+                        wire:click="$set('filter','all')"
+                        class="px-3 py-1.5 text-sm border-l border-zinc-200 dark:border-zinc-700 focus:outline-none transition
+                               {{ $filter === 'all' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200' }}">
+                    All
+                </button>
+            </div>
+        </div>
+        
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             @forelse($notes as $n)
                 @php

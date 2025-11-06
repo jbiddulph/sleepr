@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -57,6 +58,9 @@ class Index extends Component
     public string $edit_body = '';
     public ?string $edit_send_date = null; // datetime-local string or null
     public string $edit_recipients = ''; // comma or newline separated emails
+
+    // List filtering: 'all' | 'hearted' | 'scheduled'
+    public string $filter = 'all';
 
     public function mount(): void
     {
@@ -137,8 +141,29 @@ class Index extends Component
 
     public function render()
     {
-        $notes = Note::query()
-            ->where('user_id', optional(Auth::user())->id)
+        $notesQuery = Note::query()
+            ->where('user_id', optional(Auth::user())->id);
+
+        if ($this->filter === 'hearted') {
+            $notesQuery->where('heart_count', '>', 0);
+        } elseif ($this->filter === 'scheduled') {
+            $notesTable = (new Note())->getTable();
+            $recipTable = (new NoteRecipient())->getTable();
+            $now = now();
+            $notesQuery->where(function ($q) use ($notesTable, $recipTable, $now) {
+                $q->where(function ($qq) use ($notesTable, $now) {
+                    $qq->whereNotNull($notesTable . '.send_date')
+                       ->where($notesTable . '.send_date', '>', $now);
+                })->orWhereExists(function ($sub) use ($notesTable, $recipTable) {
+                    $sub->select(DB::raw('1'))
+                        ->from($recipTable)
+                        ->whereColumn($recipTable . '.note_id', $notesTable . '.id')
+                        ->whereNull($recipTable . '.sent_at');
+                });
+            });
+        }
+
+        $notes = $notesQuery
             ->with(['recipients' => function ($q) {
                 $q->select('id', 'note_id', 'email')->orderBy('email');
             }])
@@ -150,7 +175,7 @@ class Index extends Component
             ])
             ->addSelect([
                 'last_sent_at' => NoteRecipient::selectRaw('MAX(sent_at)')
-                    ->whereColumn('note_id', 'notes.id'),
+                    ->whereColumn('note_id', (new Note())->getTable() . '.id'),
             ])
             ->latest()
             ->limit(25)
