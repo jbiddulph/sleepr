@@ -79,8 +79,8 @@ select:focus[data-flux-control] {
 }
 
 .sending {
-    width: auto;
-    height: auto;
+    width: 100%;
+    height: 100%;
     --border-angle: 0turn;
     --main-bg: conic-gradient(
         from var(--border-angle),
@@ -89,10 +89,10 @@ select:focus[data-flux-control] {
         #112 60%,
         #213 95%
         );
-    border: solid 5px transparent;
-    border-radius: 2em;
-    --gradient-border: conic-gradient(from var(--border-angle), transparent 25%, #08f, #f03 99%, transparent);
-    /* background: var(--main-bg) padding-box, var(--gradient-border) border-box, var(--main-bg) border-box; */
+    border: solid 2px transparent;
+    border-radius: 3px;
+    --gradient-border: conic-gradient(from var(--border-angle), transparent 25%, #FDD835, #f03 99%, transparent);
+    background: var(--main-bg) padding-box, var(--gradient-border) border-box, var(--main-bg) border-box;
     background-position: center center;
     -webkit-animation: bg-spin 3s linear infinite;
             animation: bg-spin 3s linear infinite;
