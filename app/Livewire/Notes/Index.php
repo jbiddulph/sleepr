@@ -391,7 +391,7 @@ class Index extends Component
             'subject' => $originalNote->subject,
             'body' => $originalNote->body,
             'recipients' => $recipientsString,
-            'send_date' => $originalNote->send_date,
+            'send_date' => null,
             'heart_count' => 0,
             'is_published' => true,
             'template_id' => $originalNote->template_id,
@@ -404,7 +404,7 @@ class Index extends Component
                     'note_id' => $newNote->id,
                     'email' => $recipient->email,
                     'token' => Str::uuid(),
-                    'send_date' => $recipient->send_date ?? $originalNote->send_date,
+                    'send_date' => null,
                 ]);
             }
         }
