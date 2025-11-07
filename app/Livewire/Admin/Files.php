@@ -24,7 +24,10 @@ class Files extends Component
 
         $bucket = config('filesystems.disks.supabase.bucket') ?? env('SUPABASE_BUCKET');
         $url = rtrim(env('SUPABASE_URL', ''), '/');
-        $key = env('SUPABASE_SERVICE_KEY'); // require service key for uploads
+        $key = config('filesystems.disks.supabase.service_key')
+            ?? env('SUPABASE_SERVICE_KEY')
+            ?? env('SUPABASE_SERVICE_ROLE_KEY')
+            ?? env('SUPABASE_ANON_KEY');
         if (!$bucket || !$url || !$key) {
             $this->status = __('Missing SUPABASE configuration.');
             return;
@@ -35,7 +38,7 @@ class Files extends Component
         $endpoint = $url.'/storage/v1/object/'.rawurlencode($bucket).'/'.$path;
 
         try {
-            $contents = file_get_contents($this->file->getRealPath());
+            $contents = $this->file->get(); // Stream contents from temporary upload
             $mime = $this->file->getMimeType();
             $resp = Http::withHeaders([
                 'apikey' => $key,
@@ -45,7 +48,12 @@ class Files extends Component
             ])->put($endpoint, $contents);
 
             if ($resp->failed()) {
-                $this->status = __('Upload failed.');
+                $status = $resp->status();
+                $body = $resp->json() ?? $resp->body();
+                $this->status = __('Upload failed (:code). :message', [
+                    'code' => $status,
+                    'message' => is_string($body) ? $body : json_encode($body),
+                ]);
                 return;
             }
 

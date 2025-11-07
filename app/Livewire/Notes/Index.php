@@ -296,10 +296,15 @@ class Index extends Component
         }
 
         $note = Note::with(['attachments', 'recipients'])->whereKey($this->edit_note_id)->where('user_id', Auth::id())->firstOrFail();
+        $originalSendDate = optional($note->send_date)?->copy();
+        $existingRecipients = $note->recipients->keyBy('email');
+        $allRecipientsPreviouslySent = $existingRecipients->isNotEmpty() && $existingRecipients->every(fn ($recipient) => !is_null($recipient->sent_at));
+
         $note->title = $this->edit_title;
         $note->subject = $this->edit_subject;
         $note->body = $this->edit_body;
-        $note->send_date = $this->edit_send_date; // stored as-is; recipients use their own send_date
+        $newSendDate = $this->edit_send_date ? Carbon::parse($this->edit_send_date, 'UTC') : null;
+        $note->send_date = $newSendDate; // stored consistently as Carbon instance
         $note->template_id = $this->template_id;
         $note->save();
 
@@ -323,22 +328,39 @@ class Index extends Component
                     'note_id' => $note->id,
                     'email' => $email,
                     'token' => Str::uuid(),
-                    'send_date' => $this->edit_send_date,
+                    'send_date' => $newSendDate,
                 ]);
             }
         }
 
-        // Remove recipients that are no longer in the list (only if not sent yet)
-        foreach ($note->recipients()->get() as $recipient) {
-            if (!in_array($recipient->email, $emails->toArray(), true) && !$recipient->sent_at) {
-                $recipient->delete();
-            }
+        $emailsArray = $emails->toArray();
+
+        if (!empty($emailsArray)) {
+            $note->recipients()
+                ->whereNotIn('email', $emailsArray)
+                ->whereNull('sent_at')
+                ->delete();
         }
 
-        // Ensure unsent recipients carry the updated send date
-        $note->recipients()
-            ->whereNull('sent_at')
-            ->update(['send_date' => $this->edit_send_date]);
+        $sendDateChanged = match (true) {
+            $originalSendDate && $newSendDate => !$originalSendDate->equalTo($newSendDate),
+            $originalSendDate && !$newSendDate => true,
+            !$originalSendDate && $newSendDate => true,
+            default => false,
+        };
+
+        $shouldResetSentAt = $sendDateChanged && $allRecipientsPreviouslySent;
+
+        if (!empty($emailsArray)) {
+            $updateData = ['send_date' => $newSendDate];
+            if ($shouldResetSentAt) {
+                $updateData['sent_at'] = null;
+            }
+
+            $note->recipients()
+                ->whereIn('email', $emailsArray)
+                ->update($updateData);
+        }
 
         // Replace attachments with current selection
         $note->attachments()->delete();
