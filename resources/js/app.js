@@ -111,3 +111,82 @@ window.notesCountdown = function notesCountdown(initial = {}) {
     };
 };
 
+document.addEventListener('alpine:init', () => {
+    if (!window.Alpine) {
+        return;
+    }
+
+    Alpine.data('codeEditor', (model) => ({
+        textarea: null,
+        value: '',
+
+        initialize(el) {
+            this.textarea = el;
+            this.syncFromModel();
+            this.textarea.value = this.value;
+            this.textarea.addEventListener('input', () => {
+                this.value = this.textarea.value;
+            });
+
+            if (this.hasModel()) {
+                this.$watch(() => model.get(), (val) => {
+                    const safe = val ?? '';
+                    if (safe !== this.value) {
+                        this.value = safe;
+                        if (this.textarea) {
+                            this.textarea.value = safe;
+                        }
+                    }
+                });
+            }
+        },
+
+        hasModel() {
+            return model && typeof model.get === 'function' && typeof model.set === 'function';
+        },
+
+        syncFromModel() {
+            if (this.hasModel()) {
+                const current = model.get();
+                this.value = current ?? '';
+            } else {
+                this.value = this.textarea?.value ?? '';
+            }
+        },
+
+        syncToModel(value) {
+            this.value = value ?? '';
+            if (this.hasModel()) {
+                model.set(this.value);
+            }
+        },
+
+        insertTab(event) {
+            const { selectionStart, selectionEnd, value } = event.target;
+            const tab = '    ';
+            event.target.value = value.substring(0, selectionStart) + tab + value.substring(selectionEnd);
+            event.target.selectionStart = event.target.selectionEnd = selectionStart + tab.length;
+            this.syncToModel(event.target.value);
+        },
+
+        autoIndent(event) {
+            const textarea = event.target;
+            const { selectionStart, selectionEnd, value } = textarea;
+            const lineStart = value.lastIndexOf('\n', selectionStart - 1) + 1;
+            const currentLine = value.slice(lineStart, selectionStart);
+            const indentMatch = currentLine.match(/^\s+/);
+
+            if (!indentMatch) {
+                return;
+            }
+
+            event.preventDefault();
+            const indent = '\n' + indentMatch[0];
+            textarea.value = value.substring(0, selectionStart) + indent + value.substring(selectionEnd);
+            const cursor = selectionStart + indent.length;
+            textarea.selectionStart = textarea.selectionEnd = cursor;
+            this.syncToModel(textarea.value);
+        },
+    }));
+});
+

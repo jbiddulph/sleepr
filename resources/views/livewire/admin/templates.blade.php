@@ -41,7 +41,19 @@
         </div>
         <div>
             <label class="block text-sm font-medium text-gray-900 dark:text-white">HTML (use &#123;&#123;title&#125;&#125;, &#123;&#123;body&#125;&#125;, &#123;&#123;heart_url&#125;&#125;)</label>
-            <textarea rows="12" wire:model.lazy="html" class="mt-1 w-full border rounded p-2 font-mono text-sm bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"></textarea>
+            <div x-data="codeEditor(@entangle('html').defer)">
+                <textarea
+                    rows="18"
+                    x-ref="textarea"
+                    x-on:keydown.tab.prevent="insertTab($event)"
+                    x-on:keydown.enter="autoIndent($event)"
+                    x-on:input="syncToModel($event.target.value)"
+                    x-on:blur="syncToModel($event.target.value, true)"
+                    x-init="initialize($refs.textarea)"
+                    spellcheck="false"
+                    class="code-editor mt-1 w-full border rounded font-mono text-sm leading-6 bg-white/95 dark:bg-zinc-900 text-gray-900 dark:text-gray-100 border-zinc-300 dark:border-zinc-700 shadow-inner focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-800"
+                >{{ $html }}</textarea>
+            </div>
             @error('html') <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</p> @enderror
         </div>
         <div class="flex items-center gap-2">
@@ -86,55 +98,67 @@
 
     <!-- Edit Form (inline, not in modal) -->
     @if($edit_id)
-        <div class="border rounded p-4 bg-gray-50">
-            <h3 class="text-lg font-medium mb-4">Edit Template</h3>
-            <form wire:submit.prevent="save" class="space-y-4">
+        <div class="border rounded p-4 bg-gray-50 dark:bg-zinc-800">
+            <h3 class="text-lg font-medium mb-4 text-gray-900 dark:text-white">Edit Template</h3>
+            <form wire:submit.prevent="save" class="space-y-4 text-gray-900 dark:text-white">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-sm font-medium">Name</label>
-                        <input type="text" wire:model="name" class="mt-1 w-full border rounded p-2" />
-                        @error('name') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                        <label class="block text-sm font-medium text-gray-900 dark:text-white">Name</label>
+                        <input type="text" wire:model="name" class="mt-1 w-full border rounded p-2 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white" />
+                        @error('name') <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label class="block text-sm font-medium">Slug</label>
-                        <input type="text" wire:model="slug" class="mt-1 w-full border rounded p-2" placeholder="auto-generated from name if blank" />
-                        @error('slug') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                        <label class="block text-sm font-medium text-gray-900 dark:text-white">Slug</label>
+                        <input type="text" wire:model="slug" class="mt-1 w-full border rounded p-2 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white" placeholder="auto-generated from name if blank" />
+                        @error('slug') <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</p> @enderror
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium">HTML (use &#123;&#123;title&#125;&#125;, &#123;&#123;body&#125;&#125;, &#123;&#123;heart_url&#125;&#125;)</label>
-                    <textarea rows="12" wire:model.lazy="html" class="mt-1 w-full border rounded p-2 font-mono text-sm"></textarea>
-                    @error('html') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                    <label class="block text-sm font-medium text-gray-900 dark:text-white">HTML (use &#123;&#123;title&#125;&#125;, &#123;&#123;body&#125;&#125;, &#123;&#123;heart_url&#125;&#125;)</label>
+                    <div x-data="codeEditor(@entangle('html').defer)">
+                        <textarea
+                            rows="18"
+                            x-ref="textarea"
+                            x-on:keydown.tab.prevent="insertTab($event)"
+                            x-on:keydown.enter="autoIndent($event)"
+                            x-on:input="syncToModel($event.target.value)"
+                            x-on:blur="syncToModel($event.target.value, true)"
+                            x-init="initialize($refs.textarea)"
+                            spellcheck="false"
+                            class="code-editor mt-1 w-full border rounded font-mono text-sm leading-6 bg-white/95 dark:bg-zinc-900 text-gray-900 dark:text-gray-100 border-zinc-300 dark:border-zinc-700 shadow-inner focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-800"
+                        >{{ $html }}</textarea>
+                    </div>
+                    @error('html') <p class="text-sm text-red-600 dark:text-red-400 mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div class="flex items-center gap-2">
-                    <label class="text-sm">Active</label>
-                    <input type="checkbox" wire:model="is_active" class="h-4 w-4" />
+                    <label class="text-sm text-gray-900 dark:text-white">Active</label>
+                    <input type="checkbox" wire:model="is_active" class="h-4 w-4 border-gray-300 dark:border-zinc-600 text-blue-600 focus:ring-blue-500" />
                 </div>
                 <div class="flex items-center gap-2 mt-4">
-                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Update Template</button>
-                    <button type="button" wire:click="cancel" class="px-4 py-2 border rounded">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Update Template</button>
+                    <button type="button" wire:click="cancel" class="px-4 py-2 border rounded bg-white dark:bg-zinc-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-zinc-600">Cancel</button>
                 </div>
             </form>
             <div class="mt-6">
-                <h3 class="text-sm font-medium mb-2">Live preview</h3>
+                <h3 class="text-sm font-medium mb-2 text-gray-900 dark:text-white">Live preview</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <div class="text-xs text-gray-600 mb-1">Mobile</div>
-                        <div class="border rounded p-2 max-w-xs overflow-hidden">
+                        <div class="text-xs text-gray-600 dark:text-gray-300 mb-1">Mobile</div>
+                        <div class="border rounded p-2 max-w-xs overflow-hidden bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
                             @if(!empty($preview))
-                                <div class="prose prose-sm max-w-none">{!! $preview !!}</div>
+                                <div class="prose prose-sm max-w-none dark:prose-invert">{!! $preview !!}</div>
                             @else
-                                <div class="text-sm text-gray-500">Start typing your HTML above…</div>
+                                <div class="text-sm text-gray-500 dark:text-gray-400">Start typing your HTML above…</div>
                             @endif
                         </div>
                     </div>
                     <div>
-                        <div class="text-xs text-gray-600 mb-1">Desktop</div>
-                        <div class="border rounded p-4 overflow-hidden">
+                        <div class="text-xs text-gray-600 dark:text-gray-300 mb-1">Desktop</div>
+                        <div class="border rounded p-4 overflow-hidden bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700">
                             @if(!empty($preview))
-                                <div class="prose max-w-none">{!! $preview !!}</div>
+                                <div class="prose max-w-none dark:prose-invert">{!! $preview !!}</div>
                             @else
-                                <div class="text-sm text-gray-500">Start typing your HTML above…</div>
+                                <div class="text-sm text-gray-500 dark:text-gray-400">Start typing your HTML above…</div>
                             @endif
                         </div>
                     </div>
