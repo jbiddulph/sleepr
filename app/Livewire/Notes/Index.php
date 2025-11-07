@@ -141,8 +141,10 @@ class Index extends Component
 
     public function render()
     {
+        $userId = optional(Auth::user())->id;
+
         $notesQuery = Note::query()
-            ->where('user_id', optional(Auth::user())->id);
+            ->where('user_id', $userId);
 
         if ($this->filter === 'hearted') {
             $notesQuery->where('heart_count', '>', 0);
@@ -181,8 +183,28 @@ class Index extends Component
             ->limit(25)
             ->get();
 
+        $nextDueRecipient = null;
+        if ($userId) {
+            $nextDueRecipient = NoteRecipient::query()
+                ->whereHas('note', function ($q) use ($userId) {
+                    $q->where('user_id', $userId);
+                })
+                ->whereNull('sent_at')
+                ->whereNotNull('send_date')
+                ->orderBy('send_date')
+                ->first();
+        }
+
+        $currentTime = now();
+        $appTimezone = config('app.timezone', 'UTC');
+
+        $nextDueAt = $nextDueRecipient?->send_date;
+
         return view('livewire.notes.index', [
             'notes' => $notes,
+            'currentTime' => $currentTime,
+            'nextDueAt' => $nextDueAt,
+            'appTimezone' => $appTimezone,
         ]);
     }
 
@@ -285,6 +307,11 @@ class Index extends Component
                 $recipient->delete();
             }
         }
+
+        // Ensure unsent recipients carry the updated send date
+        $note->recipients()
+            ->whereNull('sent_at')
+            ->update(['send_date' => $this->edit_send_date]);
 
         // Replace attachments with current selection
         $note->attachments()->delete();
