@@ -14,9 +14,14 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class Index extends Component
 {
+    use WithPagination;
+
+    protected string $paginationTheme = 'tailwind';
+
     #[Validate('required|string|min:3')]
     public string $title = '';
 
@@ -62,6 +67,8 @@ class Index extends Component
     // List filtering: 'all' | 'hearted' | 'scheduled'
     public string $filter = 'all';
 
+    public int $perPage = 50;
+
     public function setFilter(string $filter): void
     {
         if (!in_array($filter, ['all', 'hearted', 'scheduled'], true)) {
@@ -69,6 +76,7 @@ class Index extends Component
         }
 
         $this->filter = $filter;
+        $this->resetPage();
     }
 
     public function mount(): void
@@ -189,8 +197,11 @@ class Index extends Component
                     ->whereColumn('note_id', (new Note())->getTable() . '.id'),
             ])
             ->latest()
-            ->limit(25)
-            ->get();
+            ->paginate($this->perPage);
+
+        $totalNotes = Note::query()
+            ->where('user_id', $userId)
+            ->count();
 
         $nextDueRecipient = null;
         if ($userId) {
@@ -220,6 +231,7 @@ class Index extends Component
             'currentTime' => $currentTime,
             'nextDueAt' => $nextDueAt,
             'appTimezone' => $appTimezone,
+            'totalNotes' => $totalNotes,
         ]);
     }
 

@@ -170,7 +170,10 @@
 
     <div wire:poll.5s>
         <div class="flex items-center justify-between mb-3">
-            <h2 class="text-lg font-semibold">Your recent notes</h2>
+            <div>
+                <h2 class="text-lg font-semibold">Your recent notes</h2>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Total notes: {{ number_format($totalNotes) }}</p>
+            </div>
             <div class="inline-flex rounded-md shadow-sm overflow-hidden border border-zinc-200 dark:border-zinc-700">
                 <button type="button"
                         wire:click="setFilter('scheduled')"
@@ -278,6 +281,10 @@
             @empty
                 <div class="text-gray-500">No notes yet.</div>
             @endforelse
+        </div>
+
+        <div class="mt-4">
+            {{ $notes->links() }}
         </div>
     </div>
 
