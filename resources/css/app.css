@@ -45,6 +45,15 @@
     ::file-selector-button {
         border-color: var(--color-gray-200, currentColor);
     }
+
+    button,
+    [type='button'],
+    [type='submit'],
+    [type='reset'],
+    [role='button'],
+    .cursor-pointer {
+        cursor: pointer;
+    }
 }
 
 [data-flux-field]:not(ui-radio, ui-checkbox) {
