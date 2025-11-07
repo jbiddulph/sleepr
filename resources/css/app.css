@@ -83,10 +83,7 @@ select:focus[data-flux-control] {
     --border-angle: 0turn;
     --main-bg: conic-gradient(
         from var(--border-angle),
-        #ffffff00 80%,
-        #ffffff00 85%,
-        #ffffff00 90%,
-        #ffffff00 95%
+        #FFFFFF
         );
     border: solid 1px transparent;
     border-radius: 3px;
@@ -114,7 +111,10 @@ select:focus[data-flux-control] {
 }
 
 .dark .sending {
-    --sending-base-color: transparent;
+    --main-bg: conic-gradient(
+        from var(--border-angle),
+        #000000
+        );
     --gradient-border: conic-gradient(from var(--border-angle), transparent 25%, #f6df5e, rgba(255, 255, 255, 0.2) 99%, transparent);
 }
 
