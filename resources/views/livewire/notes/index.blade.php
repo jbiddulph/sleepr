@@ -1,3 +1,88 @@
+@once
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('notesCountdown', (initial = {}) => ({
+                timezone: initial.timezone || 'UTC',
+                now: initial.nowIso ? new Date(initial.nowIso) : new Date(),
+                target: initial.nextIso ? new Date(initial.nextIso) : null,
+                offset: 0,
+                intervalId: null,
+                eventListener: null,
+                currentDisplay: '',
+                countdownDisplay: '',
+                nextScheduledDisplay: '',
+                init() {
+                    this.syncFromServer(initial);
+                    this.eventListener = (event) => {
+                        const detail = event?.detail ?? {};
+                        this.syncFromServer(detail);
+                    };
+                    window.addEventListener('notes-countdown-sync', this.eventListener);
+                },
+                syncFromServer(detail = {}) {
+                    if (detail.timezone) {
+                        this.timezone = detail.timezone;
+                    }
+                    if (detail.nowIso) {
+                        const newNow = new Date(detail.nowIso);
+                        if (!isNaN(newNow)) {
+                            this.now = newNow;
+                            this.offset = this.now.getTime() - Date.now();
+                        }
+                    } else if (!this.offset) {
+                        this.offset = this.now.getTime() - Date.now();
+                    }
+                    if (Object.prototype.hasOwnProperty.call(detail, 'nextIso')) {
+                        this.target = detail.nextIso ? new Date(detail.nextIso) : null;
+                    }
+                    this.restartInterval();
+                },
+                restartInterval() {
+                    if (this.intervalId) {
+                        clearInterval(this.intervalId);
+                    }
+                    this.updateDisplays();
+                    this.intervalId = setInterval(() => {
+                        this.now = new Date(Date.now() + this.offset);
+                        this.updateDisplays();
+                    }, 1000);
+                },
+                updateDisplays() {
+                    const tz = this.timezone || 'UTC';
+                    const options = { timeZone: tz, year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+                    this.currentDisplay = this.now.toLocaleString(undefined, options);
+                    if (this.target) {
+                        const targetDisplay = this.target.toLocaleString(undefined, options);
+                        const diff = this.target.getTime() - this.now.getTime();
+                        if (diff > 0) {
+                            const totalSeconds = Math.floor(diff / 1000);
+                            const days = Math.floor(totalSeconds / 86400);
+                            const hours = Math.floor((totalSeconds % 86400) / 3600);
+                            const minutes = Math.floor((totalSeconds % 3600) / 60);
+                            const seconds = totalSeconds % 60;
+                            this.countdownDisplay = `${days}d ${String(hours).padStart(2,'0')}h ${String(minutes).padStart(2,'0')}m ${String(seconds).padStart(2,'0')}s`;
+                        } else {
+                            this.countdownDisplay = '0d 00h 00m 00s';
+                        }
+                        this.nextScheduledDisplay = `Scheduled for ${targetDisplay}`;
+                    } else {
+                        this.countdownDisplay = '';
+                        this.nextScheduledDisplay = '';
+                    }
+                },
+                destroy() {
+                    if (this.intervalId) {
+                        clearInterval(this.intervalId);
+                    }
+                    if (this.eventListener) {
+                        window.removeEventListener('notes-countdown-sync', this.eventListener);
+                    }
+                },
+            }));
+        });
+    </script>
+@endonce
+
 <div class="space-y-6" x-data="{ showCreateModal: @entangle('showCreateModal'), showEditModal: @entangle('showEditModal') }">
     @if($status)
         <div class="p-3 rounded bg-green-100 text-green-800">{{ $status }}</div>
@@ -10,58 +95,11 @@
     @endphp
 
     <div class="flex justify-center items-center py-4">
-        <div class="text-center space-y-1" x-data="{
-                timezone: @js($displayTimezone),
-                now: new Date(@js($currentIso)),
-                target: {{ $nextIso ? 'new Date('.json_encode($nextIso).')' : 'null' }},
-                currentDisplay: '',
-                countdownDisplay: '',
-                nextScheduledDisplay: '',
-                offset: 0,
-                init() {
-                    if (!(this.now instanceof Date) || isNaN(this.now)) {
-                        this.now = new Date();
-                    }
-                    if (this.target && (isNaN(this.target))) {
-                        this.target = null;
-                    }
-                    this.offset = this.now.getTime() - Date.now();
-                    const intervalKey = '__notesCountdownInterval';
-                    if (window[intervalKey]) {
-                        clearInterval(window[intervalKey]);
-                    }
-                    this.updateDisplays();
-                    window[intervalKey] = setInterval(() => {
-                        this.now = new Date(Date.now() + this.offset);
-                        this.updateDisplays();
-                    }, 1000);
-                },
-                updateDisplays() {
-                    const tz = this.timezone || 'UTC';
-                    const options = { timeZone: tz, year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
-                    this.currentDisplay = this.now.toLocaleString(undefined, options);
-                    if (this.target) {
-                        this.nextScheduledDisplay = this.target.toLocaleString(undefined, options);
-                        const diff = this.target.getTime() - this.now.getTime();
-                        if (diff > 0) {
-                            const totalSeconds = Math.floor(diff / 1000);
-                            const days = Math.floor(totalSeconds / 86400);
-                            const hours = Math.floor((totalSeconds % 86400) / 3600);
-                            const minutes = Math.floor((totalSeconds % 3600) / 60);
-                            const seconds = totalSeconds % 60;
-                            this.countdownDisplay = `${days}d ${String(hours).padStart(2,'0')}h ${String(minutes).padStart(2,'0')}m ${String(seconds).padStart(2,'0')}s`;
-                        } else {
-                            this.countdownDisplay = '0d 00h 00m 00s';
-                        }
-                    } else {
-                        this.countdownDisplay = '';
-                        this.nextScheduledDisplay = '';
-                    }
-                }
-            }"
-            x-init="init()"
-            x-cloak>
-            <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Current time ({{ $displayTimezone }})</div>
+        <div class="text-center space-y-1"
+             wire:ignore
+             x-data="notesCountdown({ nowIso: @js($currentIso), nextIso: @js($nextIso), timezone: @js($displayTimezone) })"
+             x-cloak>
+            <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400" x-text="`Current time (${timezone})`"></div>
             <div class="text-2xl font-semibold text-gray-900 dark:text-white" x-text="currentDisplay"></div>
             <template x-if="target">
                 <div class="text-sm text-gray-600 dark:text-gray-300">
@@ -70,7 +108,7 @@
                 </div>
             </template>
             <template x-if="target">
-                <div class="text-xs text-gray-500 dark:text-gray-400" x-text="`Scheduled for ${nextScheduledDisplay}`"></div>
+                <div class="text-xs text-gray-500 dark:text-gray-400" x-text="nextScheduledDisplay"></div>
             </template>
             <template x-if="!target">
                 <div class="text-sm text-gray-500 dark:text-gray-400">No scheduled notes pending.</div>

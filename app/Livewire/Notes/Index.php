@@ -200,6 +200,12 @@ class Index extends Component
 
         $nextDueAt = $nextDueRecipient?->send_date;
 
+        $this->dispatch('notes-countdown-sync',
+            nowIso: $currentTime->clone()->setTimezone('UTC')->toIso8601String(),
+            nextIso: $nextDueAt?->clone()->setTimezone('UTC')->toIso8601String(),
+            timezone: $appTimezone,
+        );
+
         return view('livewire.notes.index', [
             'notes' => $notes,
             'currentTime' => $currentTime,
