@@ -98,7 +98,6 @@ select:focus[data-flux-control] {
     -webkit-animation: bg-spin 3s linear infinite;
     animation: bg-spin 3s linear infinite;
 }
-
 .dark .sending {
     --sending-base-color: transparent;
     --gradient-border: conic-gradient(from var(--border-angle), transparent 25%, #f6df5e, rgba(255, 255, 255, 0.2) 99%, transparent);
