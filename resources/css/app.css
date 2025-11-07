@@ -82,20 +82,26 @@ select:focus[data-flux-control] {
     width: 100%;
     height: 100%;
     --border-angle: 0turn;
+    --sending-base-color: transparent;
     --main-bg: conic-gradient(
         from var(--border-angle),
-        #FFFFFF 80%,
-        #FFFFFF 85%,
-        #FFFFFF 90%,
-        #FFFFFF 95%
-        );
+        var(--sending-base-color) 80%,
+        var(--sending-base-color) 85%,
+        var(--sending-base-color) 90%,
+        var(--sending-base-color) 95%
+    );
     border: solid 1px transparent;
     border-radius: 3px;
-    --gradient-border: conic-gradient(from var(--border-angle), transparent 25%, #f6df5e, #FFF 99%, transparent);
-    background: var(--main-bg) padding-box, var(--gradient-border) border-box, var(--main-bg) border-box;
+    --gradient-border: conic-gradient(from var(--border-angle), transparent 25%, #f6df5e, rgba(255, 255, 255, 0.9) 99%, transparent);
+    background: var(--main-bg) padding-box, var(--gradient-border) border-box, transparent;
     background-position: center center;
     -webkit-animation: bg-spin 3s linear infinite;
-            animation: bg-spin 3s linear infinite;
+    animation: bg-spin 3s linear infinite;
+}
+
+.dark .sending {
+    --sending-base-color: transparent;
+    --gradient-border: conic-gradient(from var(--border-angle), transparent 25%, #f6df5e, rgba(255, 255, 255, 0.2) 99%, transparent);
 }
 @-webkit-keyframes bg-spin {
     to {
