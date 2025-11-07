@@ -11,6 +11,7 @@
                 currentDisplay: '',
                 countdownDisplay: '',
                 nextScheduledDisplay: '',
+                hasTriggeredSend: false,
                 init() {
                     this.syncFromServer(initial);
                     this.eventListener = (event) => {
@@ -34,6 +35,7 @@
                     }
                     if (Object.prototype.hasOwnProperty.call(detail, 'nextIso')) {
                         this.target = detail.nextIso ? new Date(detail.nextIso) : null;
+                        this.hasTriggeredSend = false;
                     }
                     this.restartInterval();
                 },
@@ -61,10 +63,15 @@
                             const minutes = Math.floor((totalSeconds % 3600) / 60);
                             const seconds = totalSeconds % 60;
                             this.countdownDisplay = `${days}d ${String(hours).padStart(2,'0')}h ${String(minutes).padStart(2,'0')}m ${String(seconds).padStart(2,'0')}s`;
+                            this.nextScheduledDisplay = `Scheduled for ${targetDisplay}`;
+                            this.hasTriggeredSend = false;
                         } else {
-                            this.countdownDisplay = '0d 00h 00m 00s';
+                            if (!this.hasTriggeredSend) {
+                                this.hasTriggeredSend = true;
+                            }
+                            this.countdownDisplay = 'SENDING…';
+                            this.nextScheduledDisplay = `Sending note scheduled for ${targetDisplay}`;
                         }
-                        this.nextScheduledDisplay = `Scheduled for ${targetDisplay}`;
                     } else {
                         this.countdownDisplay = '';
                         this.nextScheduledDisplay = '';
@@ -258,19 +265,19 @@
             <h2 class="text-lg font-semibold">Your recent notes</h2>
             <div class="inline-flex rounded-md shadow-sm overflow-hidden border border-zinc-200 dark:border-zinc-700">
                 <button type="button"
-                        wire:click="$set('filter','scheduled')"
+                        wire:click="setFilter('scheduled')"
                         class="px-3 py-1.5 text-sm focus:outline-none transition
                                {{ $filter === 'scheduled' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200' }}">
                     Scheduled
                 </button>
                 <button type="button"
-                        wire:click="$set('filter','hearted')"
+                        wire:click="setFilter('hearted')"
                         class="px-3 py-1.5 text-sm border-l border-zinc-200 dark:border-zinc-700 focus:outline-none transition
                                {{ $filter === 'hearted' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200' }}">
                     ❤️&nbsp;Liked
                 </button>
                 <button type="button"
-                        wire:click="$set('filter','all')"
+                        wire:click="setFilter('all')"
                         class="px-3 py-1.5 text-sm border-l border-zinc-200 dark:border-zinc-700 focus:outline-none transition
                                {{ $filter === 'all' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200' }}">
                     All
@@ -294,7 +301,17 @@
                                 @php
                                     $recipientsCollection = $n->getRelationValue('recipients');
                                     $recipientsCount = $recipientsCollection ? $recipientsCollection->count() : 0;
+                                    $unsentCount = $recipientsCollection ? $recipientsCollection->whereNull('sent_at')->count() : 0;
+                                    $isSending = $n->send_date && \
+                                        \Illuminate\Support\Carbon::parse($n->send_date)->lte(now()) &&
+                                        $unsentCount > 0;
                                 @endphp
+                                @if($isSending)
+                                    <div class="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
+                                        <span class="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                        SENDING…
+                                    </div>
+                                @endif
                                 @if($recipientsCount > 0)
                                     <div class="text-xs text-gray-600 dark:text-gray-400 mt-1">
                                         Recipients: <span class="break-words">{{ $recipientsCollection->pluck('email')->join(', ') }}</span>
@@ -318,7 +335,12 @@
                                         @endif
                                     @endif
                                     @if($n->total_recipients > 0)
-                                        <span>Sent: {{ $n->sent_recipients_count ?? 0 }}/{{ $n->total_recipients ?? 0 }}</span>
+                                        <span>
+                                            Sent: {{ $n->sent_recipients_count ?? 0 }}/{{ $n->total_recipients ?? 0 }}
+                                            @if($unsentCount > 0 && $n->send_date && \Illuminate\Support\Carbon::parse($n->send_date)->lte(now()))
+                                                <span class="ml-1 text-amber-600 dark:text-amber-300">(processing)</span>
+                                            @endif
+                                        </span>
                                     @endif
                                     @if($isFullySent)
                                         <span class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-green-500 text-white">✓</span>

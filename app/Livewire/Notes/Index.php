@@ -62,6 +62,15 @@ class Index extends Component
     // List filtering: 'all' | 'hearted' | 'scheduled'
     public string $filter = 'all';
 
+    public function setFilter(string $filter): void
+    {
+        if (!in_array($filter, ['all', 'hearted', 'scheduled'], true)) {
+            return;
+        }
+
+        $this->filter = $filter;
+    }
+
     public function mount(): void
     {
         $this->templates = Template::query()->orderBy('name')->get(['id','name'])->toArray();
@@ -167,7 +176,7 @@ class Index extends Component
 
         $notes = $notesQuery
             ->with(['recipients' => function ($q) {
-                $q->select('id', 'note_id', 'email')->orderBy('email');
+                $q->select('id', 'note_id', 'email', 'sent_at')->orderBy('email');
             }])
             ->withCount([
                 'recipients as total_recipients',
