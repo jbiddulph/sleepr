@@ -201,6 +201,10 @@
                 @php
                     $isScheduled = ($n->send_date && \Illuminate\Support\Carbon::parse($n->send_date)->isFuture()) || (($n->total_recipients ?? 0) > ($n->sent_recipients_count ?? 0));
                     $isFullySent = ($n->total_recipients ?? 0) > 0 && ($n->sent_recipients_count ?? 0) === ($n->total_recipients ?? 0);
+                    $recipientsCollection = $n->getRelationValue('recipients');
+                    $recipientsCount = $recipientsCollection ? $recipientsCollection->count() : 0;
+                    $unsentCount = $recipientsCollection ? $recipientsCollection->whereNull('sent_at')->count() : 0;
+                    $isSending = $n->send_date && \Illuminate\Support\Carbon::parse($n->send_date)->lte(now()) && $unsentCount > 0;
                 @endphp
                 <div class="rounded p-3 border bg-white dark:bg-zinc-800 {{ $isScheduled ? 'border-yellow-400' : 'border-zinc-200 dark:border-zinc-700' }} {{ $isSending ? 'sending' : '' }}">
                         <div class="flex items-start justify-between">
@@ -209,12 +213,6 @@
                                 @if($n->subject)
                                     <div class="text-sm text-gray-700 dark:text-gray-300 mt-1">Subject: {{ $n->subject }}</div>
                                 @endif
-                                @php
-                                    $recipientsCollection = $n->getRelationValue('recipients');
-                                    $recipientsCount = $recipientsCollection ? $recipientsCollection->count() : 0;
-                                    $unsentCount = $recipientsCollection ? $recipientsCollection->whereNull('sent_at')->count() : 0;
-                                    $isSending = $n->send_date && \Illuminate\Support\Carbon::parse($n->send_date)->lte(now()) && $unsentCount > 0;
-                                @endphp
                                 @if($isSending)
                                     <div class="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
                                         <span class="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"></span>
