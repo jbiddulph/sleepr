@@ -1,7 +1,18 @@
 @once
     <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('notesCountdown', (initial = {}) => ({
+        (() => {
+            const register = () => {
+                if (!(window.Alpine?.data)) {
+                    return;
+                }
+
+                if (window.__notesCountdownRegistered) {
+                    return;
+                }
+
+                window.__notesCountdownRegistered = true;
+
+                window.Alpine.data('notesCountdown', (initial = {}) => ({
                 timezone: initial.timezone || 'UTC',
                 now: initial.nowIso ? new Date(initial.nowIso) : new Date(),
                 target: initial.nextIso ? new Date(initial.nextIso) : null,
@@ -66,11 +77,9 @@
                             this.nextScheduledDisplay = `Scheduled for ${targetDisplay}`;
                             this.hasTriggeredSend = false;
                         } else {
-                            if (!this.hasTriggeredSend) {
-                                this.hasTriggeredSend = true;
-                            }
-                            this.countdownDisplay = 'SENDING…';
-                            this.nextScheduledDisplay = `Sending note scheduled for ${targetDisplay}`;
+                            this.countdownDisplay = '';
+                            this.nextScheduledDisplay = '';
+                            this.hasTriggeredSend = true;
                         }
                     } else {
                         this.countdownDisplay = '';
@@ -86,7 +95,14 @@
                     }
                 },
             }));
-        });
+            };
+
+            if (window.Alpine) {
+                register();
+            }
+
+            document.addEventListener('alpine:init', register, { once: true });
+        })();
     </script>
 @endonce
 
@@ -108,16 +124,16 @@
              x-cloak>
             <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400" x-text="`Current time (${timezone})`"></div>
             <div class="text-2xl font-semibold text-gray-900 dark:text-white" x-text="currentDisplay"></div>
-            <template x-if="target">
+            <template x-if="target && countdownDisplay !== ''">
                 <div class="text-sm text-gray-600 dark:text-gray-300">
                     Next note in:
                     <span class="font-semibold text-gray-900 dark:text-white" x-text="countdownDisplay"></span>
                 </div>
             </template>
-            <template x-if="target">
+            <template x-if="target && nextScheduledDisplay !== '' && countdownDisplay !== ''">
                 <div class="text-xs text-gray-500 dark:text-gray-400" x-text="nextScheduledDisplay"></div>
             </template>
-            <template x-if="!target">
+            <template x-if="!target || countdownDisplay === ''">
                 <div class="text-sm text-gray-500 dark:text-gray-400">No scheduled notes pending.</div>
             </template>
         </div>
@@ -302,9 +318,7 @@
                                     $recipientsCollection = $n->getRelationValue('recipients');
                                     $recipientsCount = $recipientsCollection ? $recipientsCollection->count() : 0;
                                     $unsentCount = $recipientsCollection ? $recipientsCollection->whereNull('sent_at')->count() : 0;
-                                    $isSending = $n->send_date && \
-                                        \Illuminate\Support\Carbon::parse($n->send_date)->lte(now()) &&
-                                        $unsentCount > 0;
+                                    $isSending = $n->send_date && \Illuminate\Support\Carbon::parse($n->send_date)->lte(now()) && $unsentCount > 0;
                                 @endphp
                                 @if($isSending)
                                     <div class="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
