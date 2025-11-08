@@ -72,13 +72,16 @@ class Files extends Component
             ]);
 
             if ($response->failed()) {
-                $this->status = __('Upload failed (:code). :message', [
-                    'code' => $response->status(),
-                    'message' => $response->body(),
-                ]);
+                $this->status = sprintf(
+                    'Upload failed (%s). Response: %s',
+                    $response->status(),
+                    $response->body() ?: '[empty]'
+                );
                 $this->publicUrl = null;
                 return;
             }
+
+            $this->status = sprintf('Upload succeeded (%s).', $response->status());
         } catch (\Throwable $e) {
             report($e);
             Log::error('Supabase upload exception', [
@@ -86,7 +89,7 @@ class Files extends Component
                 'path' => $path,
                 'trace' => $e->getTraceAsString(),
             ]);
-            $this->status = __('Upload failed: :message', ['message' => $e->getMessage()]);
+            $this->status = 'Upload failed with exception: '.$e->getMessage();
             $this->publicUrl = null;
             return;
         }
