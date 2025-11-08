@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Rule as LWRule;
 use Livewire\Component;
@@ -45,6 +46,15 @@ class Files extends Component
             $mime = $this->file->getMimeType() ?: 'application/octet-stream';
             $stream = fopen($this->file->getRealPath(), 'r');
 
+            Log::info('Supabase upload starting', [
+                'user_id' => optional(auth()->user())->id ?? null,
+                'bucket' => $bucket,
+                'endpoint' => $endpoint,
+                'path' => $path,
+                'mime' => $mime,
+                'size_bytes' => $this->file->getSize(),
+            ]);
+
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer '.$key,
                 'apikey' => $key,
@@ -57,6 +67,12 @@ class Files extends Component
             }
 
             if ($response->failed()) {
+                Log::warning('Supabase upload failed', [
+                    'path' => $path,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                    'headers' => $response->headers(),
+                ]);
                 $this->status = __('Upload failed (:code). :message', [
                     'code' => $response->status(),
                     'message' => $response->body(),
@@ -64,8 +80,18 @@ class Files extends Component
                 $this->publicUrl = null;
                 return;
             }
+
+            Log::info('Supabase upload succeeded', [
+                'path' => $path,
+                'status' => $response->status(),
+            ]);
         } catch (\Throwable $e) {
             report($e);
+            Log::error('Supabase upload exception', [
+                'message' => $e->getMessage(),
+                'path' => $path,
+                'trace' => $e->getTraceAsString(),
+            ]);
             $this->status = __('Upload failed: :message', ['message' => $e->getMessage()]);
             $this->publicUrl = null;
             return;
