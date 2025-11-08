@@ -36,7 +36,7 @@ class Files extends Component
         }
 
         $original = $this->file->getClientOriginalName();
-        $directory = trim('uploads/'.now()->format('Y/m/d'), '/');
+        $directory = trim('public/uploads/'.now()->format('Y/m/d'), '/');
         $filename = Str::uuid().'-'.$original;
         $path = $directory.'/'.$filename;
         $endpoint = $baseUrl.'/storage/v1/object/'.rawurlencode($bucket).'/'.$path;
