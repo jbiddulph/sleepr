@@ -469,9 +469,18 @@ class Index extends Component
     {
         $bucket = config('filesystems.disks.supabase.bucket') ?? env('SUPABASE_BUCKET');
         $url = rtrim(env('SUPABASE_URL', ''), '/');
-        $key = env('SUPABASE_SERVICE_ROLE_KEY') ?? env('SUPABASE_SERVICE_KEY') ?? env('SUPABASE_ANON_KEY');
-        if (!$bucket || !$url || !$key) {
-            $this->bucketStatus = __('Missing SUPABASE configuration.');
+        
+        // CRITICAL: Must use service role key for storage operations
+        $key = env('SUPABASE_SERVICE_ROLE_KEY');
+        
+        if (!$bucket || !$url) {
+            $this->bucketStatus = __('Missing SUPABASE_BUCKET or SUPABASE_URL configuration.');
+            return;
+        }
+        
+        if (!$key) {
+            $this->bucketStatus = __('Missing SUPABASE_SERVICE_ROLE_KEY. Storage operations require the service role key.');
+            \Log::error('fetchBucketFiles failed: SUPABASE_SERVICE_ROLE_KEY not configured');
             return;
         }
         try {

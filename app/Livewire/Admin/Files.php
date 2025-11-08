@@ -31,8 +31,14 @@ class Files extends Component
         $this->validate();
 
         [$bucket, $baseUrl, $key, $publicBase] = $this->getSupabaseConfig();
-        if (!$bucket || !$baseUrl || !$key) {
-            $this->status = __('Missing SUPABASE configuration.');
+        if (!$bucket || !$baseUrl) {
+            $this->status = __('Missing SUPABASE_BUCKET or SUPABASE_URL configuration.');
+            return;
+        }
+        
+        if (!$key) {
+            $this->status = __('Missing SUPABASE_SERVICE_ROLE_KEY. File uploads require the service role key, not the anon key.');
+            Log::error('Upload failed: SUPABASE_SERVICE_ROLE_KEY not configured');
             return;
         }
 
@@ -105,8 +111,14 @@ class Files extends Component
     public function loadFiles(): void
     {
         [$bucket, $baseUrl, $key, $publicBase] = $this->getSupabaseConfig();
-        if (!$bucket || !$baseUrl || !$key) {
-            $this->status = __('Missing SUPABASE configuration.');
+        if (!$bucket || !$baseUrl) {
+            $this->status = __('Missing SUPABASE_BUCKET or SUPABASE_URL configuration.');
+            $this->files = [];
+            return;
+        }
+        
+        if (!$key) {
+            $this->status = __('Missing SUPABASE_SERVICE_ROLE_KEY. Listing files requires the service role key.');
             $this->files = [];
             return;
         }
@@ -170,7 +182,18 @@ class Files extends Component
     {
         $bucket = env('SUPABASE_BUCKET');
         $baseUrl = rtrim(env('SUPABASE_URL', ''), '/');
-        $key = env('SUPABASE_SERVICE_ROLE_KEY') ?? env('SUPABASE_SERVICE_KEY') ?? env('SUPABASE_ANON_KEY');
+        
+        // CRITICAL: For file uploads to work, we MUST use the service role key
+        // The anon key has restricted permissions and will fail uploads
+        $key = env('SUPABASE_SERVICE_ROLE_KEY');
+        
+        if (!$key) {
+            Log::error('SUPABASE_SERVICE_ROLE_KEY is not set! File uploads will fail.', [
+                'has_anon_key' => !empty(env('SUPABASE_ANON_KEY')),
+                'has_service_key' => !empty(env('SUPABASE_SERVICE_KEY')),
+            ]);
+        }
+        
         $publicBase = rtrim(env('SUPABASE_PUBLIC_URL', ''), '/');
 
         if (!$publicBase && $baseUrl) {
