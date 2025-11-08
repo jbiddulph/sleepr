@@ -28,8 +28,19 @@ class Files extends Component
             ?? env('SUPABASE_SERVICE_KEY')
             ?? env('SUPABASE_SERVICE_ROLE_KEY')
             ?? env('SUPABASE_ANON_KEY');
+        logger()->info('Supabase upload invoked', [
+            'bucket' => $bucket,
+            'url' => $url,
+            'has_key' => !empty($key),
+            'user_id' => optional(Auth::user())->id,
+        ]);
         if (!$bucket || !$url || !$key) {
             $this->status = __('Missing SUPABASE configuration.');
+            logger()->warning('Supabase upload aborted due to missing config', [
+                'bucket' => $bucket,
+                'url' => $url,
+                'has_key' => !empty($key),
+            ]);
             return;
         }
 
@@ -50,6 +61,10 @@ class Files extends Component
             if ($resp->failed()) {
                 $status = $resp->status();
                 $body = $resp->json() ?? $resp->body();
+                logger()->error('Supabase upload failed', [
+                    'status' => $status,
+                    'body' => $body,
+                ]);
                 $this->status = __('Upload failed (:code). :message', [
                     'code' => $status,
                     'message' => is_string($body) ? $body : json_encode($body),
@@ -60,8 +75,15 @@ class Files extends Component
             $publicUrl = rtrim($url, '/').'/storage/v1/object/public/'.rawurlencode($bucket).'/'.$path;
             $this->reset('file');
             $this->status = __('DONE: ').$publicUrl;
+            logger()->info('Supabase upload succeeded', [
+                'path' => $path,
+                'publicUrl' => $publicUrl,
+            ]);
         } catch (\Throwable $e) {
             $this->status = __('Error: ').$e->getMessage();
+            logger()->error('Supabase upload exception', [
+                'exception' => $e,
+            ]);
         }
     }
 
