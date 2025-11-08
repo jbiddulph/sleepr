@@ -55,21 +55,11 @@ class Files extends Component
             ->join('/');
         $endpoint = $baseUrl.'/storage/v1/object/'.rawurlencode($bucket).'/'.$encodedPath;
         
-        logger()->channel('errorlog')->info('[admin.files] Preparing upload', [
-            'path' => $path,
-            'endpoint' => $endpoint,
-            'mime' => $mime ?? null,
-            'size_bytes' => $this->file->getSize(),
-        ]);
-
         try {
-            logger()->channel('errorlog')->info('[admin.files] Entering upload try block', [
-                'path' => $path,
-            ]);
             $mime = $this->file->getMimeType() ?: 'application/octet-stream';
             $contents = file_get_contents($this->file->getRealPath());
 
-            logger()->channel('errorlog')->info('Supabase upload starting', [
+            Log::info('Supabase upload starting', [
                 'user_id' => optional(auth()->user())->id ?? null,
                 'bucket' => $bucket,
                 'endpoint' => $endpoint,
@@ -87,15 +77,11 @@ class Files extends Component
                 'x-upsert' => 'true',
             ])->put($endpoint, $contents);
 
-            logger()->channel('errorlog')->info('Supabase upload response', [
-                'status' => $response->status(),
+            Log::info('Supabase upload response', [
                 'path' => $path,
+                'status' => $response->status(),
                 'body' => $response->body(),
                 'headers' => $response->headers(),
-            ]);
-            logger()->channel('errorlog')->info('[admin.files] Upload response captured', [
-                'status' => $response->status(),
-                'body' => $response->body(),
             ]);
 
             if ($response->failed()) {
