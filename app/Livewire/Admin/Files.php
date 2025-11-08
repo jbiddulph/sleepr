@@ -97,7 +97,7 @@ class Files extends Component
                 'apikey' => $key,
                 'Content-Type' => 'application/json',
             ])->post($endpoint, [
-                'prefix' => '',
+                'prefix' => 'public/',
                 'limit' => 1000,
                 'offset' => 0,
                 'sortBy' => [
@@ -113,10 +113,16 @@ class Files extends Component
             }
 
             $items = collect($response->json() ?? [])
-                ->filter(fn ($item) => empty($item['metadata']['is_directory'] ?? false))
+                ->filter(function ($item) {
+                    if (!empty($item['metadata']['is_directory'] ?? false)) {
+                        return false;
+                    }
+                    $name = $item['name'] ?? '';
+                    return str_starts_with($name, 'public/');
+                })
                 ->map(function ($item) use ($bucket, $publicBase) {
                     $name = $item['name'] ?? '';
-                    $path = $name;
+                    $path = ltrim($name, '/');
                     return [
                         'name' => basename($name),
                         'path' => $path,
