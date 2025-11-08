@@ -55,7 +55,6 @@ class Files extends Component
             ->join('/');
         $endpoint = $baseUrl.'/storage/v1/object/'.rawurlencode($bucket).'/'.$encodedPath;
         
-        logger()->channel('errorlog')->info('Supabase upload response', [...]);
         logger()->channel('errorlog')->info('[admin.files] Preparing upload', [
             'path' => $path,
             'endpoint' => $endpoint,
