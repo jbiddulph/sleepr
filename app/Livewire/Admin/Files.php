@@ -170,7 +170,7 @@ class Files extends Component
     {
         $bucket = env('SUPABASE_BUCKET');
         $baseUrl = rtrim(env('SUPABASE_URL', ''), '/');
-        $key = env('SUPABASE_SERVICE_KEY') ?? env('SUPABASE_SERVICE_ROLE_KEY') ?? env('SUPABASE_ANON_KEY');
+        $key = env('SUPABASE_SERVICE_ROLE_KEY') ?? env('SUPABASE_SERVICE_KEY') ?? env('SUPABASE_ANON_KEY');
         $publicBase = rtrim(env('SUPABASE_PUBLIC_URL', ''), '/');
 
         if (!$publicBase && $baseUrl) {

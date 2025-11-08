@@ -469,7 +469,7 @@ class Index extends Component
     {
         $bucket = config('filesystems.disks.supabase.bucket') ?? env('SUPABASE_BUCKET');
         $url = rtrim(env('SUPABASE_URL', ''), '/');
-        $key = env('SUPABASE_SERVICE_KEY', env('SUPABASE_ANON_KEY'));
+        $key = env('SUPABASE_SERVICE_ROLE_KEY') ?? env('SUPABASE_SERVICE_KEY') ?? env('SUPABASE_ANON_KEY');
         if (!$bucket || !$url || !$key) {
             $this->bucketStatus = __('Missing SUPABASE configuration.');
             return;
