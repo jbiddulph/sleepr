@@ -48,17 +48,18 @@ php artisan supabase:check
 - Step-by-step fix instructions
 - Security considerations
 - Troubleshooting guide
+- Key rotation instructions
 
 ### 5. `/QUICK_FIX.md` (NEW)
 **Purpose:** Quick reference guide for immediate action
 
 **Contents:**
-- 3-step fix process
+- 4-step fix process
 - Essential commands
 - Quick verification steps
 
 ### 6. `/setup-heroku-supabase.sh` (NEW)
-**Purpose:** Automated setup script for Heroku
+**Purpose:** Helper script for Heroku setup (requires manual key input for security)
 
 **Usage:**
 ```bash
@@ -66,10 +67,10 @@ php artisan supabase:check
 ```
 
 **Features:**
-- Automatically sets all required environment variables
+- Prompts for manual key entry (secure)
+- Sets all required environment variables
 - Verifies configuration
 - Tests connectivity
-- Executable script (chmod +x applied)
 
 ## How to Deploy the Fix
 
@@ -81,16 +82,12 @@ git push heroku main
 ```
 
 ### Step 2: Set Environment Variable
-Choose one method:
-
-**A. Using the automated script:**
 ```bash
-./setup-heroku-supabase.sh
-```
+# Get your key from .env
+grep SUPABASE_SERVICE_ROLE_KEY .env
 
-**B. Manual command:**
-```bash
-heroku config:set SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzcHJtZWJiYWh6am5yZWtrdnh2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcwODExNzE5NCwiZXhwIjoyMDIzNjkzMTk0fQ.50H10qHDXcHX8zc9Nua7a1jf1j-VN5ACnHcy6ipwfgU"
+# Set on Heroku (replace with actual key)
+heroku config:set SUPABASE_SERVICE_ROLE_KEY="YOUR_ACTUAL_KEY"
 ```
 
 ### Step 3: Verify
@@ -111,7 +108,7 @@ heroku run php artisan supabase:check
 ```bash
 SUPABASE_URL=https://isprmebbahzjnrekkvxv.supabase.co
 SUPABASE_BUCKET=sleepr
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGc... (full key)
+SUPABASE_SERVICE_ROLE_KEY=(get from .env file)
 ```
 
 ## Before vs After
@@ -135,16 +132,6 @@ if (!$key) {
 }
 ```
 
-## Testing Checklist
-
-- [ ] Local test: `php artisan supabase:check` passes
-- [ ] Code committed and pushed to Heroku
-- [ ] Environment variable set on Heroku
-- [ ] Heroku test: `heroku run php artisan supabase:check` passes
-- [ ] Upload file through web interface works
-- [ ] File appears in Supabase Storage bucket
-- [ ] No errors in Heroku logs: `heroku logs --tail`
-
 ## Security Notes
 
 ⚠️ **CRITICAL SECURITY REMINDERS:**
@@ -154,22 +141,24 @@ if (!$key) {
 3. **Rotate the key if ever compromised**
 4. **Only use in server-side backend code**
 
-The service role key bypasses all Row Level Security (RLS) policies and has full administrative access to your Supabase project.
+### If Your Key Was Exposed
 
-## Additional Resources
+If you accidentally committed your service role key to Git (like we almost did):
 
-- [Supabase Storage Documentation](https://supabase.com/docs/guides/storage)
-- [Heroku Config Vars](https://devcenter.heroku.com/articles/config-vars)
-- [Laravel Environment Configuration](https://laravel.com/docs/configuration)
+1. **Rotate immediately** in Supabase Dashboard (Settings → API → Reset Service Role Key)
+2. Update .env file with new key
+3. Update Heroku: `heroku config:set SUPABASE_SERVICE_ROLE_KEY="NEW_KEY"`
+4. Force push to remove from Git history if needed (or contact GitHub support)
 
-## Support
+## Testing Checklist
 
-If you encounter issues after applying this fix:
-
-1. Run `heroku run php artisan supabase:check` to diagnose
-2. Check Heroku logs: `heroku logs --tail`
-3. Verify bucket exists in Supabase Dashboard
-4. Check Storage policies in Supabase (may need to adjust RLS if using service key for public uploads)
+- [ ] Local test: `php artisan supabase:check` passes
+- [ ] Code committed and pushed to Heroku
+- [ ] Environment variable set on Heroku
+- [ ] Heroku test: `heroku run php artisan supabase:check` passes
+- [ ] Upload file through web interface works
+- [ ] File appears in Supabase Storage bucket
+- [ ] No errors in Heroku logs: `heroku logs --tail`
 
 ---
 

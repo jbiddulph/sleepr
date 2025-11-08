@@ -27,17 +27,22 @@ php artisan supabase:check
 Your Heroku app needs the `SUPABASE_SERVICE_ROLE_KEY` environment variable. Here's how to set it:
 
 ### Step 1: Get Your Service Role Key
-From your `.env` file, the service role key is:
+Get the key from your local `.env` file:
+
+```bash
+grep SUPABASE_SERVICE_ROLE_KEY .env
 ```
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzcHJtZWJiYWh6am5yZWtrdnh2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcwODExNzE5NCwiZXhwIjoyMDIzNjkzMTk0fQ.50H10qHDXcHX8zc9Nua7a1jf1j-VN5ACnHcy6ipwfgU
-```
+
+The key will look like: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` (long string)
 
 ### Step 2: Set it on Heroku
 
 **Option A: Via Heroku CLI**
 ```bash
-heroku config:set SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzcHJtZWJiYWh6am5yZWtrdnh2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcwODExNzE5NCwiZXhwIjoyMDIzNjkzMTk0fQ.50H10qHDXcHX8zc9Nua7a1jf1j-VN5ACnHcy6ipwfgU"
+heroku config:set SUPABASE_SERVICE_ROLE_KEY="YOUR_ACTUAL_KEY_FROM_ENV"
 ```
+
+Replace `YOUR_ACTUAL_KEY_FROM_ENV` with the actual value from your .env file.
 
 **Option B: Via Heroku Dashboard**
 1. Go to your app's dashboard on Heroku
@@ -45,7 +50,7 @@ heroku config:set SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ
 3. Click "Reveal Config Vars"
 4. Add a new variable:
    - KEY: `SUPABASE_SERVICE_ROLE_KEY`
-   - VALUE: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzcHJtZWJiYWh6am5yZWtrdnh2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcwODExNzE5NCwiZXhwIjoyMDIzNjkzMTk0fQ.50H10qHDXcHX8zc9Nua7a1jf1j-VN5ACnHcy6ipwfgU`
+   - VALUE: (paste your service role key from .env)
 
 ### Step 3: Verify Configuration
 
@@ -85,6 +90,19 @@ The service role key bypasses Row Level Security policies and has full access to
 - Never commit it to public repositories
 - Only use it in server-side code (backend/API)
 - Rotate it if it's ever compromised
+
+## How to Rotate Your Supabase Service Role Key
+
+If your key was exposed (like in a Git commit), you MUST rotate it:
+
+1. Go to [Supabase Dashboard](https://app.supabase.com)
+2. Select your project
+3. Go to Settings → API
+4. Under "Service Role Key" section, click "Reset Service Role Key"
+5. Copy the new key
+6. Update your local .env file
+7. Update Heroku: `heroku config:set SUPABASE_SERVICE_ROLE_KEY="NEW_KEY"`
+8. Test: `heroku run php artisan supabase:check`
 
 ## Additional Files to Check on Heroku
 

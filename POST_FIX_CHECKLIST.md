@@ -30,19 +30,17 @@ Use this checklist to ensure everything is working correctly after applying the 
   ```
   Wait for build to complete
 
-- [ ] **Set environment variable**
-  
-  Choose ONE method:
-  
-  **Method A: Automated Script** (Recommended)
+- [ ] **Get your service role key**
   ```bash
-  ./setup-heroku-supabase.sh
+  grep SUPABASE_SERVICE_ROLE_KEY .env
   ```
-  
-  **Method B: Manual Command**
+  Copy the key value (the part after the =)
+
+- [ ] **Set environment variable on Heroku**
   ```bash
-  heroku config:set SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzcHJtZWJiYWh6am5yZWtrdnh2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcwODExNzE5NCwiZXhwIjoyMDIzNjkzMTk0fQ.50H10qHDXcHX8zc9Nua7a1jf1j-VN5ACnHcy6ipwfgU"
+  heroku config:set SUPABASE_SERVICE_ROLE_KEY="PASTE_YOUR_KEY_HERE"
   ```
+  Replace PASTE_YOUR_KEY_HERE with the actual key from previous step
 
 - [ ] **Verify environment variables**
   ```bash
@@ -93,6 +91,28 @@ Use this checklist to ensure everything is working correctly after applying the 
   - ✅ Successful upload log entries
   - ❌ No "Missing SUPABASE configuration" errors
 
+## Security Checklist - IMPORTANT
+
+- [ ] **Verify service role key is NOT in Git commits**
+  ```bash
+  git log --all -p | grep -i "eyJhbGciOiJIUzI1NiIs"
+  ```
+  Should return nothing
+
+- [ ] **If key was exposed in Git:**
+  - [ ] Go to Supabase Dashboard
+  - [ ] Settings → API → Reset Service Role Key
+  - [ ] Copy new key
+  - [ ] Update local .env with new key
+  - [ ] Update Heroku: `heroku config:set SUPABASE_SERVICE_ROLE_KEY="NEW_KEY"`
+  - [ ] Consider using `git filter-branch` to remove from history
+  - [ ] Close GitHub security alert
+
+- [ ] **Service role key is not in client-side code**
+  - [ ] Check JavaScript files
+  - [ ] Check Blade templates
+  - [ ] Key should only be in server-side PHP
+
 ## Troubleshooting Checklist
 
 If uploads still fail:
@@ -113,78 +133,10 @@ If uploads still fail:
   - Storage → Buckets
   - Verify "sleepr" bucket exists
 
-- [ ] **Check bucket policies**
-  - Supabase Dashboard → Storage → sleepr → Policies
-  - Verify policies don't block uploads (service role key should bypass these anyway)
-
-- [ ] **Test with curl**
-  ```bash
-  heroku run bash
-  # Then in Heroku console:
-  php artisan tinker
-  ```
-  ```php
-  $response = Http::withHeaders([
-      'Authorization' => 'Bearer ' . env('SUPABASE_SERVICE_ROLE_KEY'),
-      'apikey' => env('SUPABASE_SERVICE_ROLE_KEY'),
-  ])->post(env('SUPABASE_URL') . '/storage/v1/object/list/sleepr', ['limit' => 1]);
-  echo $response->status(); // Should be 200
-  ```
-
-- [ ] **Check Laravel logs**
-  ```bash
-  heroku run cat storage/logs/laravel.log
-  ```
-
 - [ ] **Restart dynos manually**
   ```bash
   heroku restart
   ```
-
-## Performance Checklist
-
-- [ ] **Monitor upload times**
-  - Small files (< 1MB) should upload in < 5 seconds
-  - Large files (> 10MB) may take longer
-
-- [ ] **Check dyno performance**
-  ```bash
-  heroku ps
-  ```
-
-- [ ] **Monitor error rates**
-  ```bash
-  heroku logs --tail | grep -i error
-  ```
-
-## Security Checklist
-
-- [ ] **Service role key is not in Git**
-  ```bash
-  git log --all --full-history --source -- "*SUPABASE*"
-  ```
-  Should not show service role key in commits
-
-- [ ] **Service role key is not in client-side code**
-  - Check JavaScript files
-  - Check Blade templates
-  - Key should only be in server-side PHP
-
-- [ ] **Environment variables are secure**
-  ```bash
-  heroku config
-  ```
-  Verify no sensitive keys are exposed
-
-## Documentation Checklist
-
-- [ ] **Team is informed**
-  - Share this fix with team members
-  - Update project documentation
-
-- [ ] **README updated** (if applicable)
-  - Add note about required environment variables
-  - Link to setup instructions
 
 ## Final Success Criteria
 
@@ -196,10 +148,17 @@ If uploads still fail:
 4. ✅ Uploaded files appear in Supabase Storage
 5. ✅ File list loads correctly
 6. ✅ Can download/access uploaded files
+7. ✅ Service role key is NOT exposed in Git
 
 ## Quick Commands Reference
 
 ```bash
+# Get key from .env
+grep SUPABASE_SERVICE_ROLE_KEY .env
+
+# Set on Heroku
+heroku config:set SUPABASE_SERVICE_ROLE_KEY="YOUR_KEY"
+
 # Check Supabase config
 heroku run php artisan supabase:check
 
@@ -211,12 +170,6 @@ heroku config
 
 # Restart app
 heroku restart
-
-# Open app in browser
-heroku open
-
-# Access Heroku bash
-heroku run bash
 ```
 
 ---
@@ -226,6 +179,5 @@ heroku run bash
 **Completed By:** _______________
 
 **Notes:**
-_____________________________________________
 _____________________________________________
 _____________________________________________

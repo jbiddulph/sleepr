@@ -76,7 +76,7 @@ Result: Upload works! 🎉
 ┌──────────────────────────────────────────┐
 │  Local Machine with .env File           │
 │                                          │
-│  SUPABASE_SERVICE_ROLE_KEY="eyJh..."  ✅ │
+│  SUPABASE_SERVICE_ROLE_KEY="..."  ✅     │
 │                                          │
 │  Your .env has all the keys!             │
 └──────┬───────────────────────────────────┘
@@ -126,9 +126,9 @@ RLS = Row Level Security (Supabase's permission system)
 ```
 Step 1: Update Code              Step 2: Set Env Var           Step 3: Test
 ┌──────────────────┐            ┌──────────────────┐         ┌──────────────┐
-│ Remove fallback  │            │ heroku config:set│         │ Upload file  │
-│ to anon key      │──────────> │ SERVICE_ROLE_KEY │───────> │ ✅ Works!    │
-│                  │            │                  │         │              │
+│ Remove fallback  │            │ Get key from     │         │ Upload file  │
+│ to anon key      │──────────> │ .env and set on  │───────> │ ✅ Works!    │
+│                  │            │ Heroku           │         │              │
 └──────────────────┘            └──────────────────┘         └──────────────┘
    (Code changes)                  (Heroku setup)              (Verification)
 ```
@@ -186,9 +186,14 @@ php artisan supabase:check
 
 ## Quick Reference
 
+**Get your key from .env:**
+```bash
+grep SUPABASE_SERVICE_ROLE_KEY .env
+```
+
 **To Fix on Heroku:**
 ```bash
-heroku config:set SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJI..."
+heroku config:set SUPABASE_SERVICE_ROLE_KEY="YOUR_KEY_FROM_ENV"
 ```
 
 **To Verify:**
@@ -201,7 +206,30 @@ heroku run php artisan supabase:check
 heroku logs --tail
 ```
 
+## Security Warning ⚠️
+
+```
+┌────────────────────────────────────────────────────┐
+│  🔑 SERVICE ROLE KEY = MASTER KEY                  │
+│                                                    │
+│  ✅ DO:                      ❌ DON'T:             │
+│  - Keep in .env             - Commit to Git       │
+│  - Use server-side only     - Expose in frontend  │
+│  - Rotate if compromised    - Share publicly      │
+│  - Store in Heroku config   - Log in plain text   │
+└────────────────────────────────────────────────────┘
+```
+
 ---
 
-**Remember:** The service role key is like a master key 🔑 - it opens everything!
-Keep it secret, keep it safe, and only use it server-side.
+**Remember:** The service role key is like a master key 🔑
+Keep it secret, keep it safe, and only use it server-side!
+
+## If Your Key Was Exposed
+
+1. Go to Supabase Dashboard → Settings → API
+2. Click "Reset Service Role Key"
+3. Copy the new key
+4. Update .env file
+5. Update Heroku: `heroku config:set SUPABASE_SERVICE_ROLE_KEY="NEW_KEY"`
+6. Close any GitHub security alerts

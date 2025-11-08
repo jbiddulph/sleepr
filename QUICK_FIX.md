@@ -3,17 +3,26 @@
 ## The Issue
 File uploads fail when Heroku dyno is running because `SUPABASE_SERVICE_ROLE_KEY` isn't set.
 
-## Quick Fix (3 Steps)
+## Quick Fix (4 Steps)
 
-### 1. Set the Environment Variable on Heroku
+### 1. Get Your Service Role Key from .env
 ```bash
-heroku config:set SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzcHJtZWJiYWh6am5yZWtrdnh2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcwODExNzE5NCwiZXhwIjoyMDIzNjkzMTk0fQ.50H10qHDXcHX8zc9Nua7a1jf1j-VN5ACnHcy6ipwfgU"
+grep SUPABASE_SERVICE_ROLE_KEY .env
 ```
 
-### 2. Wait for Dyno to Restart
+This will show your key (starts with `eyJhbGciOiJIUzI1NiIs...`)
+
+### 2. Set the Environment Variable on Heroku
+```bash
+heroku config:set SUPABASE_SERVICE_ROLE_KEY="YOUR_KEY_FROM_ENV_FILE"
+```
+
+⚠️ **IMPORTANT**: Replace `YOUR_KEY_FROM_ENV_FILE` with the actual key from your .env file
+
+### 3. Wait for Dyno to Restart
 Heroku will automatically restart your dyno after setting the config var (takes ~30 seconds).
 
-### 3. Test
+### 4. Test
 Try uploading a file or run:
 ```bash
 heroku run php artisan supabase:check
@@ -29,10 +38,12 @@ Your code was falling back to `SUPABASE_ANON_KEY` which has restricted permissio
 
 ## Verify Heroku Config
 ```bash
+# Check if key is set (will show the key)
 heroku config:get SUPABASE_SERVICE_ROLE_KEY
-```
 
-Should return: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` (your service role key)
+# Or list all config vars
+heroku config
+```
 
 ---
 

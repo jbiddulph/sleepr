@@ -12,9 +12,17 @@ if ! command -v heroku &> /dev/null; then
     exit 1
 fi
 
-# Set the service role key
+# IMPORTANT: Replace YOUR_SERVICE_ROLE_KEY_HERE with your actual service role key from .env
 echo "📝 Setting SUPABASE_SERVICE_ROLE_KEY..."
-heroku config:set SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzcHJtZWJiYWh6am5yZWtrdnh2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcwODExNzE5NCwiZXhwIjoyMDIzNjkzMTk0fQ.50H10qHDXcHX8zc9Nua7a1jf1j-VN5ACnHcy6ipwfgU"
+echo ""
+echo "⚠️  MANUAL STEP REQUIRED:"
+echo "    Run this command with your actual service role key from .env:"
+echo ""
+echo "    heroku config:set SUPABASE_SERVICE_ROLE_KEY=\"YOUR_SERVICE_ROLE_KEY_HERE\""
+echo ""
+echo "    Get your key from .env file: grep SUPABASE_SERVICE_ROLE_KEY .env"
+echo ""
+read -p "Press Enter after you've set the key manually..."
 
 echo ""
 echo "📝 Setting SUPABASE_URL..."
