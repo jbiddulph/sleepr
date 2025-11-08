@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Admin;
 
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Rule as LWRule;
 use Livewire\Component;
@@ -22,31 +22,15 @@ class Files extends Component
 
     public function mount(): void
     {
-        $this->refreshFiles();
+        $this->loadFiles();
     }
 
     public function upload(): void
     {
         $this->validate();
 
-        $disk = 'supabase';
-        if (!config("filesystems.disks.$disk")) {
-            $this->status = __('Supabase disk is not configured.');
-            return;
-        }
-
-        $bucket = config("filesystems.disks.$disk.bucket") ?? env('SUPABASE_BUCKET');
-        $basePublicUrl = config("filesystems.disks.$disk.public_url")
-            ?? rtrim(env('SUPABASE_PUBLIC_URL', ''), '/')
-            ?? '';
-        if (!$basePublicUrl) {
-            $supabaseUrl = rtrim(env('SUPABASE_URL', ''), '/');
-            if ($supabaseUrl) {
-                $basePublicUrl = $supabaseUrl.'/storage/v1/object/public';
-            }
-        }
-
-        if (!$bucket || !$basePublicUrl) {
+        [$bucket, $baseUrl, $key, $publicBase] = $this->getSupabaseConfig();
+        if (!$bucket || !$baseUrl || !$key) {
             $this->status = __('Missing SUPABASE configuration.');
             return;
         }
@@ -54,8 +38,32 @@ class Files extends Component
         $original = $this->file->getClientOriginalName();
         $directory = trim('uploads/'.now()->format('Y/m/d'), '/');
         $filename = Str::uuid().'-'.$original;
+        $path = $directory.'/'.$filename;
+        $endpoint = $baseUrl.'/storage/v1/object/'.rawurlencode($bucket).'/'.$path;
+
         try {
-            $storedPath = $this->file->storePubliclyAs($directory, $filename, $disk);
+            $mime = $this->file->getMimeType() ?: 'application/octet-stream';
+            $stream = fopen($this->file->getRealPath(), 'r');
+
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer '.$key,
+                'apikey' => $key,
+                'Content-Type' => $mime,
+                'x-upsert' => 'true',
+            ])->put($endpoint, $stream);
+
+            if ($stream) {
+                fclose($stream);
+            }
+
+            if ($response->failed()) {
+                $this->status = __('Upload failed (:code). :message', [
+                    'code' => $response->status(),
+                    'message' => $response->body(),
+                ]);
+                $this->publicUrl = null;
+                return;
+            }
         } catch (\Throwable $e) {
             report($e);
             $this->status = __('Upload failed: :message', ['message' => $e->getMessage()]);
@@ -65,34 +73,62 @@ class Files extends Component
 
         $this->reset('file');
 
-        $publicUrl = $this->makePublicUrl($storedPath);
+        $publicUrl = $this->makePublicUrl($bucket, $publicBase, $path);
         $this->publicUrl = $publicUrl;
         $this->status = __('File uploaded successfully.');
-        $this->refreshFiles();
+        $this->loadFiles();
     }
 
-    public function refreshFiles(): void
+    public function loadFiles(): void
     {
-        $disk = 'supabase';
+        [$bucket, $baseUrl, $key, $publicBase] = $this->getSupabaseConfig();
+        if (!$bucket || !$baseUrl || !$key) {
+            $this->status = __('Missing SUPABASE configuration.');
+            $this->files = [];
+            return;
+        }
+
         $this->loadingFiles = true;
 
         try {
-            if (!config("filesystems.disks.$disk")) {
+            $endpoint = $baseUrl.'/storage/v1/object/list/'.rawurlencode($bucket);
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer '.$key,
+                'apikey' => $key,
+                'Content-Type' => 'application/json',
+            ])->post($endpoint, [
+                'prefix' => '',
+                'limit' => 1000,
+                'offset' => 0,
+                'sortBy' => [
+                    'column' => 'name',
+                    'order' => 'asc',
+                ],
+            ]);
+
+            if ($response->failed()) {
+                $this->status = __('Could not load files: :message', ['message' => $response->body()]);
                 $this->files = [];
                 return;
             }
 
-            $paths = collect(Storage::disk($disk)->allFiles())
-                ->sort()
-                ->values();
+            $items = collect($response->json() ?? [])
+                ->filter(fn ($item) => empty($item['metadata']['is_directory'] ?? false))
+                ->map(function ($item) use ($bucket, $publicBase) {
+                    $name = $item['name'] ?? '';
+                    $path = $name;
+                    return [
+                        'name' => basename($name),
+                        'path' => $path,
+                        'size' => $item['metadata']['size'] ?? null,
+                        'updated_at' => $item['updated_at'] ?? null,
+                        'url' => $this->makePublicUrl($bucket, $publicBase, $path),
+                    ];
+                })
+                ->values()
+                ->all();
 
-            $this->files = $paths->map(function (string $path) {
-                return [
-                    'path' => $path,
-                    'name' => basename($path),
-                    'url' => $this->makePublicUrl($path),
-                ];
-            })->all();
+            $this->files = $items;
         } catch (\Throwable $e) {
             report($e);
             $this->status = __('Could not load files: :message', ['message' => $e->getMessage()]);
@@ -107,15 +143,23 @@ class Files extends Component
         return view('livewire.admin.files');
     }
 
-    private function makePublicUrl(string $path): string
+    private function getSupabaseConfig(): array
     {
-        $disk = config('filesystems.disks.supabase', []);
-        $bucket = $disk['bucket'] ?? env('SUPABASE_BUCKET');
-        $basePublicUrl = $disk['public_url']
-            ?? env('SUPABASE_PUBLIC_URL')
-            ?? (trim(env('SUPABASE_URL', '')) ? rtrim(env('SUPABASE_URL', ''), '/').'/storage/v1/object/public' : '');
+        $bucket = env('SUPABASE_BUCKET');
+        $baseUrl = rtrim(env('SUPABASE_URL', ''), '/');
+        $key = env('SUPABASE_SERVICE_KEY') ?? env('SUPABASE_SERVICE_ROLE_KEY') ?? env('SUPABASE_ANON_KEY');
+        $publicBase = rtrim(env('SUPABASE_PUBLIC_URL', ''), '/');
 
-        if (!$bucket || !$basePublicUrl) {
+        if (!$publicBase && $baseUrl) {
+            $publicBase = $baseUrl.'/storage/v1/object/public';
+        }
+
+        return [$bucket, $baseUrl, $key, $publicBase];
+    }
+
+    private function makePublicUrl(?string $bucket, ?string $publicBase, string $path): string
+    {
+        if (!$bucket || !$publicBase) {
             return '';
         }
 
@@ -124,7 +168,7 @@ class Files extends Component
             ->map(fn ($segment) => rawurlencode($segment))
             ->join('/');
 
-        return rtrim($basePublicUrl, '/').'/'.$encodedBucket.'/'.$encodedPath;
+        return rtrim($publicBase, '/').'/'.$encodedBucket.'/'.$encodedPath;
     }
 }
 

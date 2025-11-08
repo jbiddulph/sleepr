@@ -60,21 +60,6 @@ return [
             'report' => false,
         ],
 
-        'supabase' => [
-            'driver' => 's3',
-            'key' => env('SUPABASE_SERVICE_KEY', env('SUPABASE_SERVICE_ROLE_KEY', env('SUPABASE_ANON_KEY'))),
-            'secret' => env('SUPABASE_SERVICE_KEY', env('SUPABASE_SERVICE_ROLE_KEY', env('SUPABASE_ANON_KEY'))),
-            'region' => env('SUPABASE_REGION', 'us-east-1'),
-            'bucket' => env('SUPABASE_BUCKET'),
-            'endpoint' => env('SUPABASE_STORAGE_ENDPOINT', rtrim(env('SUPABASE_URL', ''), '/').'/storage/v1/s3'),
-            'use_path_style_endpoint' => true,
-            'visibility' => 'public',
-            'throw' => false,
-            'report' => false,
-            'service_key' => env('SUPABASE_SERVICE_KEY') ?? env('SUPABASE_SERVICE_ROLE_KEY'),
-            'public_url' => env('SUPABASE_PUBLIC_URL', rtrim(env('SUPABASE_URL', ''), '/').'/storage/v1/object/public'),
-        ],
-
     ],
 
     /*

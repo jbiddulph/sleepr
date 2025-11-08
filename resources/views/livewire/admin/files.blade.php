@@ -43,12 +43,12 @@
         <div class="flex items-center justify-between">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Stored files</h2>
             <button type="button"
-                    wire:click="refreshFiles"
+                    wire:click="loadFiles"
                     wire:loading.attr="disabled"
-                    wire:target="refreshFiles"
+                    wire:target="loadFiles"
                     class="px-3 py-1.5 text-sm border rounded bg-white dark:bg-zinc-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-zinc-600 disabled:opacity-50">
-                <span wire:loading.remove wire:target="refreshFiles">Refresh</span>
-                <span wire:loading wire:target="refreshFiles">Refreshing…</span>
+                <span wire:loading.remove wire:target="loadFiles">Refresh</span>
+                <span wire:loading wire:target="loadFiles">Refreshing…</span>
             </button>
         </div>
 
