@@ -2,9 +2,8 @@
 
 namespace App\Livewire\Admin;
 
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Rule as LWRule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -17,74 +16,56 @@ class Files extends Component
     public $file;
 
     public string $status = '';
+    public ?string $publicUrl = null;
 
     public function upload(): void
     {
         $this->validate();
 
-        $bucket = config('filesystems.disks.supabase.bucket') ?? env('SUPABASE_BUCKET');
-        $url = rtrim(env('SUPABASE_URL', ''), '/');
-        $key = config('filesystems.disks.supabase.service_key')
-            ?? env('SUPABASE_SERVICE_KEY')
-            ?? env('SUPABASE_SERVICE_ROLE_KEY')
-            ?? env('SUPABASE_ANON_KEY');
-        logger()->info('Supabase upload invoked', [
-            'bucket' => $bucket,
-            'url' => $url,
-            'has_key' => !empty($key),
-            'user_id' => optional(Auth::user())->id,
-        ]);
-        if (!$bucket || !$url || !$key) {
+        $disk = 'supabase';
+        if (!config("filesystems.disks.$disk")) {
+            $this->status = __('Supabase disk is not configured.');
+            return;
+        }
+
+        $bucket = config("filesystems.disks.$disk.bucket") ?? env('SUPABASE_BUCKET');
+        $basePublicUrl = config("filesystems.disks.$disk.public_url")
+            ?? rtrim(env('SUPABASE_PUBLIC_URL', ''), '/')
+            ?? '';
+        if (!$basePublicUrl) {
+            $supabaseUrl = rtrim(env('SUPABASE_URL', ''), '/');
+            if ($supabaseUrl) {
+                $basePublicUrl = $supabaseUrl.'/storage/v1/object/public';
+            }
+        }
+
+        if (!$bucket || !$basePublicUrl) {
             $this->status = __('Missing SUPABASE configuration.');
-            logger()->warning('Supabase upload aborted due to missing config', [
-                'bucket' => $bucket,
-                'url' => $url,
-                'has_key' => !empty($key),
-            ]);
             return;
         }
 
         $original = $this->file->getClientOriginalName();
-        $path = 'uploads/'.date('Y/m/d/').uniqid().'-'.$original;
-        $endpoint = $url.'/storage/v1/object/'.rawurlencode($bucket).'/'.$path;
-
+        $directory = trim('uploads/'.now()->format('Y/m/d'), '/');
+        $filename = Str::uuid().'-'.$original;
         try {
-            $contents = $this->file->get(); // Stream contents from temporary upload
-            $mime = $this->file->getMimeType();
-            $resp = Http::withHeaders([
-                'apikey' => $key,
-                'Authorization' => 'Bearer '.$key,
-                'Content-Type' => $mime ?: 'application/octet-stream',
-                'x-upsert' => 'true',
-            ])->put($endpoint, $contents);
-
-            if ($resp->failed()) {
-                $status = $resp->status();
-                $body = $resp->json() ?? $resp->body();
-                logger()->error('Supabase upload failed', [
-                    'status' => $status,
-                    'body' => $body,
-                ]);
-                $this->status = __('Upload failed (:code). :message', [
-                    'code' => $status,
-                    'message' => is_string($body) ? $body : json_encode($body),
-                ]);
-                return;
-            }
-
-            $publicUrl = rtrim($url, '/').'/storage/v1/object/public/'.rawurlencode($bucket).'/'.$path;
-            $this->reset('file');
-            $this->status = __('DONE: ').$publicUrl;
-            logger()->info('Supabase upload succeeded', [
-                'path' => $path,
-                'publicUrl' => $publicUrl,
-            ]);
+            $storedPath = $this->file->storePubliclyAs($directory, $filename, $disk);
         } catch (\Throwable $e) {
-            $this->status = __('Error: ').$e->getMessage();
-            logger()->error('Supabase upload exception', [
-                'exception' => $e,
-            ]);
+            report($e);
+            $this->status = __('Upload failed: :message', ['message' => $e->getMessage()]);
+            $this->publicUrl = null;
+            return;
         }
+
+        $this->reset('file');
+
+        $encodedBucket = rawurlencode($bucket);
+        $encodedPath = collect(explode('/', trim($storedPath, '/')))
+            ->map(fn ($segment) => rawurlencode($segment))
+            ->join('/');
+        $publicUrl = rtrim($basePublicUrl, '/').'/'.$encodedBucket.'/'.$encodedPath;
+
+        $this->publicUrl = $publicUrl;
+        $this->status = __('File uploaded successfully.');
     }
 
     public function render()

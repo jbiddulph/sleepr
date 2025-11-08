@@ -5,7 +5,14 @@
      x-on:livewire-upload-progress="progress = $event.detail.progress">
 
     @if($status)
-        <div class="p-3 rounded bg-green-100 text-green-800">{{ $status }}</div>
+        <div class="p-3 rounded {{ $publicUrl ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
+            <div>{{ $status }}</div>
+            @if($publicUrl)
+                <div class="mt-2">
+                    <a href="{{ $publicUrl }}" target="_blank" class="underline break-all">{{ $publicUrl }}</a>
+                </div>
+            @endif
+        </div>
     @endif
 
     <form wire:submit.prevent="upload" class="space-y-4">
@@ -31,10 +38,6 @@
             </button>
         </div>
     </form>
-
-    <template x-if="!uploading && {{ json_encode((bool) $status) }}">
-        <div class="text-sm text-green-700">DONE</div>
-    </template>
 </div>
 
 
