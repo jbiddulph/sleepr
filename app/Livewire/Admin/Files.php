@@ -53,6 +53,8 @@ class Files extends Component
                 'path' => $path,
                 'mime' => $mime,
                 'size_bytes' => $this->file->getSize(),
+                'key_prefix' => substr($key, 0, 8),
+                'key_suffix' => substr($key, -8),
             ]);
 
             $response = Http::withHeaders([
