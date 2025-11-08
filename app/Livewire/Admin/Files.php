@@ -36,7 +36,7 @@ class Files extends Component
         }
 
         $original = $this->file->getClientOriginalName();
-        $directory = trim('public/uploads/'.now()->format('Y/m/d'), '/');
+        $directory = trim('uploads/'.now()->format('Y/m/d'), '/');
         $filename = Str::uuid().'-'.$original;
         $path = $directory.'/'.$filename;
         $endpoint = $baseUrl.'/storage/v1/object/'.rawurlencode($bucket).'/'.$path;
@@ -97,7 +97,7 @@ class Files extends Component
                 'apikey' => $key,
                 'Content-Type' => 'application/json',
             ])->post($endpoint, [
-                'prefix' => 'public/',
+                'prefix' => '',
                 'limit' => 1000,
                 'offset' => 0,
                 'sortBy' => [
@@ -113,16 +113,10 @@ class Files extends Component
             }
 
             $items = collect($response->json() ?? [])
-                ->filter(function ($item) {
-                    if (!empty($item['metadata']['is_directory'] ?? false)) {
-                        return false;
-                    }
-                    $name = $item['name'] ?? '';
-                    return str_starts_with($name, 'public/');
-                })
+                ->filter(fn ($item) => empty($item['metadata']['is_directory'] ?? false))
                 ->map(function ($item) use ($bucket, $publicBase) {
                     $name = $item['name'] ?? '';
-                    $path = ltrim($name, '/');
+                    $path = $name;
                     return [
                         'name' => basename($name),
                         'path' => $path,
