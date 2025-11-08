@@ -43,10 +43,17 @@ class Files extends Component
         }
 
         $original = $this->file->getClientOriginalName();
+        $extension = $this->file->getClientOriginalExtension();
+        $basename = pathinfo($original, PATHINFO_FILENAME);
+        $safeBasename = Str::slug($basename) ?: 'file';
+        $safeFilename = $safeBasename.($extension ? '.'.$extension : '');
         $directory = trim('uploads/'.now()->format('Y/m/d'), '/');
-        $filename = Str::uuid().'-'.$original;
+        $filename = Str::uuid().'-'.$safeFilename;
         $path = $directory.'/'.$filename;
-        $endpoint = $baseUrl.'/storage/v1/object/'.rawurlencode($bucket).'/'.$path;
+        $encodedPath = collect(explode('/', $path))
+            ->map(fn ($segment) => rawurlencode($segment))
+            ->join('/');
+        $endpoint = $baseUrl.'/storage/v1/object/'.rawurlencode($bucket).'/'.$encodedPath;
 
         try {
             $mime = $this->file->getMimeType() ?: 'application/octet-stream';
