@@ -55,7 +55,17 @@ class Files extends Component
             ->join('/');
         $endpoint = $baseUrl.'/storage/v1/object/'.rawurlencode($bucket).'/'.$encodedPath;
 
+        Log::channel('errorlog')->info('[admin.files] Preparing upload', [
+            'path' => $path,
+            'endpoint' => $endpoint,
+            'mime' => $mime ?? null,
+            'size_bytes' => $this->file->getSize(),
+        ]);
+
         try {
+            Log::channel('errorlog')->info('[admin.files] Entering upload try block', [
+                'path' => $path,
+            ]);
             $mime = $this->file->getMimeType() ?: 'application/octet-stream';
             $contents = file_get_contents($this->file->getRealPath());
 
@@ -78,10 +88,14 @@ class Files extends Component
             ])->put($endpoint, $contents);
 
             Log::info('Supabase upload response', [
-                'path' => $path,
                 'status' => $response->status(),
+                'path' => $path,
                 'body' => $response->body(),
                 'headers' => $response->headers(),
+            ]);
+            Log::channel('errorlog')->info('[admin.files] Upload response captured', [
+                'status' => $response->status(),
+                'body' => $response->body(),
             ]);
 
             if ($response->failed()) {
