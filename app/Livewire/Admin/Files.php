@@ -54,8 +54,9 @@ class Files extends Component
             ->map(fn ($segment) => rawurlencode($segment))
             ->join('/');
         $endpoint = $baseUrl.'/storage/v1/object/'.rawurlencode($bucket).'/'.$encodedPath;
-
-        Log::channel('errorlog')->info('[admin.files] Preparing upload', [
+        
+        logger()->channel('errorlog')->info('Supabase upload response', [...]);
+        logger()->channel('errorlog')->info('[admin.files] Preparing upload', [
             'path' => $path,
             'endpoint' => $endpoint,
             'mime' => $mime ?? null,
@@ -63,13 +64,13 @@ class Files extends Component
         ]);
 
         try {
-            Log::channel('errorlog')->info('[admin.files] Entering upload try block', [
+            logger()->channel('errorlog')->info('[admin.files] Entering upload try block', [
                 'path' => $path,
             ]);
             $mime = $this->file->getMimeType() ?: 'application/octet-stream';
             $contents = file_get_contents($this->file->getRealPath());
 
-            Log::info('Supabase upload starting', [
+            logger()->channel('errorlog')->info('Supabase upload starting', [
                 'user_id' => optional(auth()->user())->id ?? null,
                 'bucket' => $bucket,
                 'endpoint' => $endpoint,
@@ -87,13 +88,13 @@ class Files extends Component
                 'x-upsert' => 'true',
             ])->put($endpoint, $contents);
 
-            Log::info('Supabase upload response', [
+            logger()->channel('errorlog')->info('Supabase upload response', [
                 'status' => $response->status(),
                 'path' => $path,
                 'body' => $response->body(),
                 'headers' => $response->headers(),
             ]);
-            Log::channel('errorlog')->info('[admin.files] Upload response captured', [
+            logger()->channel('errorlog')->info('[admin.files] Upload response captured', [
                 'status' => $response->status(),
                 'body' => $response->body(),
             ]);
