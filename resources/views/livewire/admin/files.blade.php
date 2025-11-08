@@ -38,6 +38,43 @@
             </button>
         </div>
     </form>
+
+    <div class="mt-8 space-y-3">
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Stored files</h2>
+            <button type="button"
+                    wire:click="refreshFiles"
+                    wire:loading.attr="disabled"
+                    wire:target="refreshFiles"
+                    class="px-3 py-1.5 text-sm border rounded bg-white dark:bg-zinc-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-zinc-600 disabled:opacity-50">
+                <span wire:loading.remove wire:target="refreshFiles">Refresh</span>
+                <span wire:loading wire:target="refreshFiles">Refreshing…</span>
+            </button>
+        </div>
+
+        @if($loadingFiles)
+            <div class="text-sm text-gray-500 dark:text-gray-400">Loading files…</div>
+        @elseif(empty($files))
+            <div class="text-sm text-gray-500 dark:text-gray-400">No files found in this bucket.</div>
+        @else
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+                @foreach($files as $file)
+                    <div class="border rounded-lg p-3 bg-white dark:bg-zinc-800 shadow-sm">
+                        <div class="text-sm font-medium text-gray-900 dark:text-white break-words">{{ $file['name'] }}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 break-words mt-1">{{ $file['path'] }}</div>
+                        @if(!empty($file['url']))
+                            <div class="mt-2">
+                                <a href="{{ $file['url'] }}" target="_blank"
+                                   class="inline-flex items-center text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                                    View
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        @endif
+    </div>
 </div>
 
 

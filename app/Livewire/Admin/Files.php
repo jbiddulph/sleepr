@@ -17,6 +17,13 @@ class Files extends Component
 
     public string $status = '';
     public ?string $publicUrl = null;
+    public array $files = [];
+    public bool $loadingFiles = false;
+
+    public function mount(): void
+    {
+        $this->refreshFiles();
+    }
 
     public function upload(): void
     {
@@ -58,19 +65,66 @@ class Files extends Component
 
         $this->reset('file');
 
-        $encodedBucket = rawurlencode($bucket);
-        $encodedPath = collect(explode('/', trim($storedPath, '/')))
-            ->map(fn ($segment) => rawurlencode($segment))
-            ->join('/');
-        $publicUrl = rtrim($basePublicUrl, '/').'/'.$encodedBucket.'/'.$encodedPath;
-
+        $publicUrl = $this->makePublicUrl($storedPath);
         $this->publicUrl = $publicUrl;
         $this->status = __('File uploaded successfully.');
+        $this->refreshFiles();
+    }
+
+    public function refreshFiles(): void
+    {
+        $disk = 'supabase';
+        $this->loadingFiles = true;
+
+        try {
+            if (!config("filesystems.disks.$disk")) {
+                $this->files = [];
+                return;
+            }
+
+            $paths = collect(Storage::disk($disk)->allFiles())
+                ->sort()
+                ->values();
+
+            $this->files = $paths->map(function (string $path) {
+                return [
+                    'path' => $path,
+                    'name' => basename($path),
+                    'url' => $this->makePublicUrl($path),
+                ];
+            })->all();
+        } catch (\Throwable $e) {
+            report($e);
+            $this->status = __('Could not load files: :message', ['message' => $e->getMessage()]);
+            $this->files = [];
+        } finally {
+            $this->loadingFiles = false;
+        }
     }
 
     public function render()
     {
         return view('livewire.admin.files');
+    }
+
+    private function makePublicUrl(string $path): string
+    {
+        $disk = config('filesystems.disks.supabase', []);
+        $bucket = $disk['bucket'] ?? env('SUPABASE_BUCKET');
+        $basePublicUrl = $disk['public_url']
+            ?? env('SUPABASE_PUBLIC_URL')
+            ?? (trim(env('SUPABASE_URL', '')) ? rtrim(env('SUPABASE_URL', ''), '/').'/storage/v1/object/public' : '');
+
+        if (!$bucket || !$basePublicUrl) {
+            return '';
+        }
+
+        $encodedBucket = rawurlencode($bucket);
+        $encodedPath = collect(explode('/', trim($path, '/')))
+            ->map(fn ($segment) => rawurlencode($segment))
+            ->join('/');
+
+        return rtrim($basePublicUrl, '/').'/'.$encodedBucket.'/'.$encodedPath;
     }
 }
 
