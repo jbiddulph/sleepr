@@ -44,7 +44,7 @@ class Files extends Component
 
         try {
             $mime = $this->file->getMimeType() ?: 'application/octet-stream';
-            $stream = fopen($this->file->getRealPath(), 'r');
+            $contents = file_get_contents($this->file->getRealPath());
 
             Log::info('Supabase upload starting', [
                 'user_id' => optional(auth()->user())->id ?? null,
@@ -60,19 +60,16 @@ class Files extends Component
                 'apikey' => $key,
                 'Content-Type' => $mime,
                 'x-upsert' => 'true',
-            ])->put($endpoint, $stream);
+            ])->put($endpoint, $contents);
 
-            if ($stream) {
-                fclose($stream);
-            }
+            Log::info('Supabase upload response', [
+                'path' => $path,
+                'status' => $response->status(),
+                'body' => $response->body(),
+                'headers' => $response->headers(),
+            ]);
 
             if ($response->failed()) {
-                Log::warning('Supabase upload failed', [
-                    'path' => $path,
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                    'headers' => $response->headers(),
-                ]);
                 $this->status = __('Upload failed (:code). :message', [
                     'code' => $response->status(),
                     'message' => $response->body(),
@@ -80,11 +77,6 @@ class Files extends Component
                 $this->publicUrl = null;
                 return;
             }
-
-            Log::info('Supabase upload succeeded', [
-                'path' => $path,
-                'status' => $response->status(),
-            ]);
         } catch (\Throwable $e) {
             report($e);
             Log::error('Supabase upload exception', [
