@@ -39,6 +39,7 @@ class Files extends Component
         if (!$key) {
             $this->status = __('Missing SUPABASE_SERVICE_ROLE_KEY. File uploads require the service role key, not the anon key.');
             Log::error('Upload failed: SUPABASE_SERVICE_ROLE_KEY not configured');
+            $this->debug('Upload aborted: missing SUPABASE_SERVICE_ROLE_KEY');
             return;
         }
 
@@ -59,7 +60,7 @@ class Files extends Component
             $mime = $this->file->getMimeType() ?: 'application/octet-stream';
             $contents = file_get_contents($this->file->getRealPath());
 
-            Log::info('Supabase upload starting', [
+            $this->debug('Supabase upload starting', [
                 'user_id' => optional(auth()->user())->id ?? null,
                 'bucket' => $bucket,
                 'endpoint' => $endpoint,
@@ -77,7 +78,7 @@ class Files extends Component
                 'x-upsert' => 'true',
             ])->put($endpoint, $contents);
 
-            Log::info('Supabase upload response', [
+            $this->debug('Supabase upload response', [
                 'path' => $path,
                 'status' => $response->status(),
                 'body' => $response->body(),
@@ -101,6 +102,9 @@ class Files extends Component
                 'message' => $e->getMessage(),
                 'path' => $path,
                 'trace' => $e->getTraceAsString(),
+            ]);
+            $this->debug('Supabase upload exception', [
+                'message' => $e->getMessage(),
             ]);
             $this->status = 'Upload failed with exception: '.$e->getMessage();
             $this->publicUrl = null;
@@ -127,6 +131,7 @@ class Files extends Component
         if (!$key) {
             $this->status = __('Missing SUPABASE_SERVICE_ROLE_KEY. Listing files requires the service role key.');
             $this->files = [];
+            $this->debug('List files aborted: missing SUPABASE_SERVICE_ROLE_KEY');
             return;
         }
 
@@ -199,6 +204,7 @@ class Files extends Component
                 'has_anon_key' => !empty(env('SUPABASE_ANON_KEY')),
                 'has_service_key' => !empty(env('SUPABASE_SERVICE_KEY')),
             ]);
+            $this->debug('SUPABASE_SERVICE_ROLE_KEY is not set!');
         }
         
         $publicBase = rtrim(env('SUPABASE_PUBLIC_URL', ''), '/');
@@ -222,6 +228,14 @@ class Files extends Component
             ->join('/');
 
         return rtrim($publicBase, '/').'/'.$encodedBucket.'/'.$encodedPath;
+    }
+
+    private function debug(string $event, array $context = []): void
+    {
+        $this->dispatchBrowserEvent('admin-files-debug', [
+            'event' => $event,
+            'context' => $context,
+        ]);
     }
 }
 

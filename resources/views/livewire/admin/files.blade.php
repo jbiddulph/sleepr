@@ -71,6 +71,12 @@
                             </div>
                         @endif
                     </div>
+
+<script>
+    window.addEventListener('admin-files-debug', event => {
+        console.log('[admin.files]', event.detail.event, event.detail.context);
+    });
+</script>
                 @endforeach
             </div>
         @endif

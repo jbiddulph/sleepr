@@ -297,7 +297,8 @@ class Index extends Component
 
         $note = Note::with(['attachments', 'recipients'])->whereKey($this->edit_note_id)->where('user_id', Auth::id())->firstOrFail();
         $originalSendDate = optional($note->send_date)?->copy();
-        $existingRecipients = $note->recipients->keyBy('email');
+        $recipientsCollection = $note->recipients()->get();
+        $existingRecipients = $recipientsCollection->keyBy('email');
         $allRecipientsPreviouslySent = $existingRecipients->isNotEmpty() && $existingRecipients->every(fn ($recipient) => !is_null($recipient->sent_at));
 
         $note->title = $this->edit_title;
@@ -319,7 +320,7 @@ class Index extends Component
         $note->save();
 
         // Get existing recipient emails
-        $existingEmails = $note->recipients()->pluck('email')->toArray();
+        $existingEmails = $recipientsCollection->pluck('email')->toArray();
 
         // Add new recipients
         foreach ($emails as $email) {
