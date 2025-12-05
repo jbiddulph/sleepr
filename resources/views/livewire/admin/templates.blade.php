@@ -26,7 +26,7 @@
                             </svg>
                         </button>
                     </div>
-                    <form wire:submit.prevent="save" class="space-y-4">
+                    <form wire:submit.prevent="save" x-on:submit="$dispatch('sync-html')" class="space-y-4">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
                 <label class="block text-sm font-medium text-gray-900 dark:text-white">Name</label>
@@ -41,7 +41,7 @@
         </div>
         <div>
             <label class="block text-sm font-medium text-gray-900 dark:text-white">HTML (use &#123;&#123;title&#125;&#125;, &#123;&#123;body&#125;&#125;, &#123;&#123;heart_url&#125;&#125;)</label>
-            <div x-data="codeEditor(@entangle('html').defer)">
+            <div x-data="codeEditor(@entangle('html'))" x-on:sync-html.window="syncToModel(textarea.value, true)">
                 <textarea
                     rows="18"
                     x-ref="textarea"
@@ -100,7 +100,7 @@
     @if($edit_id)
         <div class="border rounded p-4 bg-gray-50 dark:bg-zinc-800">
             <h3 class="text-lg font-medium mb-4 text-gray-900 dark:text-white">Edit Template</h3>
-            <form wire:submit.prevent="save" class="space-y-4 text-gray-900 dark:text-white">
+            <form wire:submit.prevent="save" x-on:submit="$dispatch('sync-html')" class="space-y-4 text-gray-900 dark:text-white">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-900 dark:text-white">Name</label>
@@ -115,7 +115,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-900 dark:text-white">HTML (use &#123;&#123;title&#125;&#125;, &#123;&#123;body&#125;&#125;, &#123;&#123;heart_url&#125;&#125;)</label>
-                    <div x-data="codeEditor(@entangle('html').defer)">
+                    <div x-data="codeEditor(@entangle('html'))" x-on:sync-html.window="syncToModel(textarea.value, true)">
                         <textarea
                             rows="18"
                             x-ref="textarea"
