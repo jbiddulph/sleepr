@@ -12,6 +12,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            return;
+        }
+
         $oldPrefix = 'sleepr_';
         $newPrefix = 'sleeper_';
         
@@ -49,6 +53,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            return;
+        }
+
         $oldPrefix = 'sleeper_';
         $newPrefix = 'sleepr_';
         
