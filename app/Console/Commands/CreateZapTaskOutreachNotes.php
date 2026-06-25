@@ -159,9 +159,11 @@ TEXT;
         $userOption = $this->option('user');
 
         if ($userOption) {
+            $userModel = new User();
+
             $user = User::query()
                 ->where('email', $userOption)
-                ->orWhereKey($userOption)
+                ->orWhere($userModel->getKeyName(), $userOption)
                 ->first();
 
             if (! $user) {
