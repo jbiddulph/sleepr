@@ -12,6 +12,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            return;
+        }
+
         $prefix = env('DB_TABLE_PREFIX', 'sleepr_');
         
         // Only rename if prefix is set and tables don't already have the prefix
@@ -63,6 +67,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            return;
+        }
+
         $prefix = env('DB_TABLE_PREFIX', 'sleepr_');
         
         if ($prefix && !empty($prefix)) {
