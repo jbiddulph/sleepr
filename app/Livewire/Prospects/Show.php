@@ -25,6 +25,21 @@ class Show extends Component
 
     public ?string $group_id = null;
 
+    #[Validate('required|string|min:2|max:255')]
+    public string $agency_name = '';
+
+    #[Validate('required|string|min:2|max:255')]
+    public string $town = '';
+
+    #[Validate('nullable|url|max:500')]
+    public ?string $website = null;
+
+    #[Validate('nullable|url|max:500')]
+    public ?string $contact_page_url = null;
+
+    #[Validate('nullable|string|max:255')]
+    public ?string $review_status = null;
+
     #[Validate('required|in:note,email_draft,email_sent,call')]
     public string $note_type = 'note';
 
@@ -43,6 +58,11 @@ class Show extends Component
     public function mount(EstateAgentProspect $prospect): void
     {
         $this->prospect = $prospect;
+        $this->agency_name = $prospect->agency_name;
+        $this->town = $prospect->town;
+        $this->website = $prospect->website;
+        $this->contact_page_url = $prospect->contact_page_url;
+        $this->review_status = $prospect->review_status;
         $this->outreach_status = (string) $prospect->outreach_status;
         $this->selected_email = $prospect->selected_email;
         $this->group_id = $prospect->group_id;
@@ -96,12 +116,33 @@ class Show extends Component
     public function saveProspect(): void
     {
         $this->validate([
+            'agency_name' => 'required|string|min:2|max:255',
+            'town' => 'required|string|min:2|max:255',
+            'website' => 'nullable|url|max:500',
+            'contact_page_url' => 'nullable|url|max:500',
             'outreach_status' => 'required|in:pending,reviewing,ready,contacted,replied,not_interested,no_email',
             'selected_email' => 'nullable|email',
             'group_id' => 'nullable|uuid',
+            'review_status' => 'nullable|string|max:255',
         ]);
 
+        $duplicateExists = EstateAgentProspect::query()
+            ->where('agency_name', $this->agency_name)
+            ->where('town', $this->town)
+            ->where('id', '!=', $this->prospect->id)
+            ->exists();
+
+        if ($duplicateExists) {
+            $this->addError('agency_name', __('A prospect with this agency and town already exists.'));
+            return;
+        }
+
         $this->prospect->update([
+            'agency_name' => $this->agency_name,
+            'town' => $this->town,
+            'website' => $this->website ?: null,
+            'contact_page_url' => $this->contact_page_url ?: null,
+            'review_status' => $this->review_status ?: null,
             'outreach_status' => $this->outreach_status,
             'selected_email' => $this->selected_email ?: null,
             'group_id' => $this->group_id ?: null,
@@ -110,7 +151,15 @@ class Show extends Component
                 : $this->prospect->last_contacted_at,
         ]);
 
+        $this->prospect->refresh();
         $this->status = __('Prospect updated.');
+    }
+
+    public function deleteProspect(): void
+    {
+        $this->prospect->delete();
+
+        $this->redirectRoute('prospects.index', navigate: true);
     }
 
     public function addNote(): void

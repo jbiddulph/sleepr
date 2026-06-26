@@ -45,6 +45,12 @@ class Index extends Component
 
     public bool $showGroupForm = false;
 
+    public ?string $edit_group_id = null;
+
+    public bool $showProspectForm = false;
+
+    public ?string $edit_prospect_id = null;
+
     public ?string $edit_template_id = null;
 
     #[Validate('required|string|min:2|max:120')]
@@ -58,6 +64,30 @@ class Index extends Component
 
     #[Validate('required|string|min:2|max:120')]
     public string $group_name = '';
+
+    #[Validate('required|string|min:2|max:255')]
+    public string $prospect_agency_name = '';
+
+    #[Validate('required|string|min:2|max:255')]
+    public string $prospect_town = '';
+
+    #[Validate('nullable|url|max:500')]
+    public ?string $prospect_website = null;
+
+    #[Validate('nullable|url|max:500')]
+    public ?string $prospect_contact_page_url = null;
+
+    #[Validate('nullable|uuid')]
+    public ?string $prospect_group_id = null;
+
+    #[Validate('required|in:pending,reviewing,ready,contacted,replied,not_interested,no_email')]
+    public string $prospect_outreach_status = 'pending';
+
+    #[Validate('nullable|email|max:255')]
+    public ?string $prospect_selected_email = null;
+
+    #[Validate('nullable|string|max:255')]
+    public ?string $prospect_review_status = null;
 
     public function mount(): void
     {
@@ -185,24 +215,197 @@ class Index extends Component
         ]);
     }
 
+    public function openGroupForm(?string $groupId = null): void
+    {
+        $this->showGroupForm = true;
+        $this->edit_group_id = $groupId;
+
+        if ($groupId) {
+            $group = EstateAgentProspectGroup::findOrFail($groupId);
+            $this->group_name = $group->name;
+        } else {
+            $this->group_name = '';
+        }
+    }
+
     public function saveGroup(): void
     {
         $this->validateOnly('group_name');
 
-        $group = EstateAgentProspectGroup::create([
-            'id' => (string) Str::uuid(),
-            'name' => $this->group_name,
-        ]);
+        if ($this->edit_group_id) {
+            $group = EstateAgentProspectGroup::findOrFail($this->edit_group_id);
+            $group->update(['name' => $this->group_name]);
+            $this->status = __('Group :name updated.', ['name' => $group->name]);
+        } else {
+            $group = EstateAgentProspectGroup::create([
+                'id' => (string) Str::uuid(),
+                'name' => $this->group_name,
+            ]);
 
-        $this->selectedGroupIds = array_values(array_unique([
-            ...$this->selectedGroupIds,
-            $group->id,
-        ]));
-        session(['prospects_group_ids' => $this->selectedGroupIds]);
+            $this->selectedGroupIds = array_values(array_unique([
+                ...$this->selectedGroupIds,
+                $group->id,
+            ]));
+            session(['prospects_group_ids' => $this->selectedGroupIds]);
+            $this->status = __('Group :name created.', ['name' => $group->name]);
+        }
 
         $this->showGroupForm = false;
+        $this->edit_group_id = null;
         $this->group_name = '';
-        $this->status = __('Group :name created.', ['name' => $group->name]);
+    }
+
+    public function deleteGroup(string $groupId): void
+    {
+        $group = EstateAgentProspectGroup::findOrFail($groupId);
+        $name = $group->name;
+        $group->delete();
+
+        $this->selectedGroupIds = array_values(array_filter(
+            $this->selectedGroupIds,
+            fn (string $id): bool => $id !== $groupId
+        ));
+        session(['prospects_group_ids' => $this->selectedGroupIds]);
+
+        if ($this->edit_group_id === $groupId) {
+            $this->showGroupForm = false;
+            $this->edit_group_id = null;
+            $this->group_name = '';
+        }
+
+        $this->status = __('Group :name deleted. Its prospects are now ungrouped.', ['name' => $name]);
+    }
+
+    public function openProspectForm(?string $prospectId = null): void
+    {
+        $this->showProspectForm = true;
+        $this->edit_prospect_id = $prospectId;
+
+        if ($prospectId) {
+            $prospect = EstateAgentProspect::findOrFail($prospectId);
+            $this->prospect_agency_name = $prospect->agency_name;
+            $this->prospect_town = $prospect->town;
+            $this->prospect_website = $prospect->website;
+            $this->prospect_contact_page_url = $prospect->contact_page_url;
+            $this->prospect_group_id = $prospect->group_id;
+            $this->prospect_outreach_status = $prospect->outreach_status;
+            $this->prospect_selected_email = $prospect->selected_email;
+            $this->prospect_review_status = $prospect->review_status;
+        } else {
+            $this->reset([
+                'prospect_agency_name',
+                'prospect_town',
+                'prospect_website',
+                'prospect_contact_page_url',
+                'prospect_selected_email',
+                'prospect_review_status',
+            ]);
+            $this->prospect_outreach_status = 'pending';
+            $this->prospect_group_id = $this->selectedGroupIds[0] ?? EstateAgentProspectGroup::query()
+                ->where('name', 'Agents')
+                ->value('id');
+        }
+    }
+
+    public function saveProspect(): void
+    {
+        $this->validate([
+            'prospect_agency_name' => 'required|string|min:2|max:255',
+            'prospect_town' => 'required|string|min:2|max:255',
+            'prospect_website' => 'nullable|url|max:500',
+            'prospect_contact_page_url' => 'nullable|url|max:500',
+            'prospect_group_id' => 'nullable|uuid',
+            'prospect_outreach_status' => 'required|in:pending,reviewing,ready,contacted,replied,not_interested,no_email',
+            'prospect_selected_email' => 'nullable|email|max:255',
+            'prospect_review_status' => 'nullable|string|max:255',
+        ]);
+
+        $duplicateQuery = EstateAgentProspect::query()
+            ->where('agency_name', $this->prospect_agency_name)
+            ->where('town', $this->prospect_town);
+
+        if ($this->edit_prospect_id) {
+            $duplicateQuery->where('id', '!=', $this->edit_prospect_id);
+        }
+
+        if ($duplicateQuery->exists()) {
+            $this->addError('prospect_agency_name', __('A prospect with this agency and town already exists.'));
+            return;
+        }
+
+        $data = [
+            'agency_name' => $this->prospect_agency_name,
+            'town' => $this->prospect_town,
+            'website' => $this->prospect_website ?: null,
+            'contact_page_url' => $this->prospect_contact_page_url ?: null,
+            'group_id' => $this->prospect_group_id ?: null,
+            'outreach_status' => $this->prospect_outreach_status,
+            'selected_email' => $this->prospect_selected_email ?: null,
+            'review_status' => $this->prospect_review_status ?: null,
+        ];
+
+        if ($this->edit_prospect_id) {
+            $prospect = EstateAgentProspect::findOrFail($this->edit_prospect_id);
+            $prospect->update($data);
+            $this->status = __('Prospect updated.');
+        } else {
+            EstateAgentProspect::create([
+                'id' => (string) Str::uuid(),
+                ...$data,
+                'best_emails' => [],
+                'other_business_emails' => [],
+                'emails_found' => $this->prospect_selected_email ? [$this->prospect_selected_email] : [],
+            ]);
+            $this->status = __('Prospect created.');
+        }
+
+        $this->showProspectForm = false;
+        $this->edit_prospect_id = null;
+        $this->reset([
+            'prospect_agency_name',
+            'prospect_town',
+            'prospect_website',
+            'prospect_contact_page_url',
+            'prospect_group_id',
+            'prospect_outreach_status',
+            'prospect_selected_email',
+            'prospect_review_status',
+        ]);
+        $this->prospect_outreach_status = 'pending';
+    }
+
+    public function deleteProspect(string $prospectId): void
+    {
+        $prospect = EstateAgentProspect::findOrFail($prospectId);
+        $label = $prospect->agency_name.' — '.$prospect->town;
+        $prospect->delete();
+
+        $this->selectedProspectIds = array_values(array_filter(
+            $this->selectedProspectIds,
+            fn (string $id): bool => $id !== $prospectId
+        ));
+
+        if ($this->edit_prospect_id === $prospectId) {
+            $this->showProspectForm = false;
+            $this->edit_prospect_id = null;
+        }
+
+        $this->status = __('Deleted prospect :label.', ['label' => $label]);
+    }
+
+    public function deleteSelectedProspects(): void
+    {
+        if ($this->selectedProspectIds === []) {
+            $this->status = __('Select prospects to delete first.');
+            return;
+        }
+
+        $deleted = EstateAgentProspect::query()
+            ->whereIn('id', $this->selectedProspectIds)
+            ->delete();
+
+        $this->selectedProspectIds = [];
+        $this->status = __('Deleted :count prospect(s).', ['count' => $deleted]);
     }
 
     public function openTemplateForm(?string $templateId = null): void

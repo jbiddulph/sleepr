@@ -10,12 +10,20 @@
             <p class="text-zinc-600 dark:text-zinc-300">{{ $prospect->town }}</p>
         </div>
         <div class="flex flex-wrap gap-2">
-            @if($prospect->website)
-                <a href="{{ $prospect->website }}" target="_blank" rel="noopener" class="px-3 py-1 border rounded">Website</a>
+            @if($website)
+                <a href="{{ $website }}" target="_blank" rel="noopener" class="px-3 py-1 border rounded">Website</a>
             @endif
-            @if($prospect->contact_page_url)
-                <a href="{{ $prospect->contact_page_url }}" target="_blank" rel="noopener" class="px-3 py-1 border rounded">Contact page</a>
+            @if($contact_page_url)
+                <a href="{{ $contact_page_url }}" target="_blank" rel="noopener" class="px-3 py-1 border rounded">Contact page</a>
             @endif
+            <button
+                type="button"
+                wire:click="deleteProspect"
+                wire:confirm="Delete this prospect? This cannot be undone."
+                class="px-3 py-1 text-red-600 border border-red-300 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
+            >
+                Delete prospect
+            </button>
         </div>
     </div>
 
@@ -25,6 +33,30 @@
                 <h2 class="text-lg font-semibold">Outreach settings</h2>
 
                 <form wire:submit.prevent="saveProspect" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Agency name</label>
+                        <input type="text" wire:model="agency_name" class="w-full border rounded p-2 bg-white dark:bg-zinc-700" />
+                        @error('agency_name') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Town</label>
+                        <input type="text" wire:model="town" class="w-full border rounded p-2 bg-white dark:bg-zinc-700" />
+                        @error('town') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Website</label>
+                        <input type="url" wire:model="website" class="w-full border rounded p-2 bg-white dark:bg-zinc-700" />
+                        @error('website') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Contact page URL</label>
+                        <input type="url" wire:model="contact_page_url" class="w-full border rounded p-2 bg-white dark:bg-zinc-700" />
+                        @error('contact_page_url') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                    </div>
+
                     <div>
                         <label class="block text-sm font-medium mb-1">Group</label>
                         <select wire:model="group_id" class="w-full border rounded p-2 bg-white dark:bg-zinc-700">
@@ -57,6 +89,12 @@
                             @endforeach
                         </select>
                         @error('selected_email') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Review status</label>
+                        <input type="text" wire:model="review_status" class="w-full border rounded p-2 bg-white dark:bg-zinc-700" />
+                        @error('review_status') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
                     </div>
 
                     <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">

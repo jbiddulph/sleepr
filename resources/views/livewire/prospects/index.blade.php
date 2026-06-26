@@ -25,7 +25,7 @@
         <div class="border rounded-lg p-4 space-y-4 dark:border-zinc-700 h-fit">
             <div class="flex items-center justify-between gap-2">
                 <h2 class="text-lg font-semibold">Groups</h2>
-                <button type="button" wire:click="$set('showGroupForm', true)" class="text-sm text-blue-600 hover:underline">
+                <button type="button" wire:click="openGroupForm" class="text-sm text-blue-600 hover:underline">
                     New
                 </button>
             </div>
@@ -40,7 +40,9 @@
                     />
                     @error('group_name') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
                     <div class="flex gap-2">
-                        <button type="submit" class="px-3 py-1.5 bg-blue-600 text-white rounded text-sm">Save</button>
+                        <button type="submit" class="px-3 py-1.5 bg-blue-600 text-white rounded text-sm">
+                            {{ $edit_group_id ? 'Update' : 'Save' }}
+                        </button>
                         <button type="button" wire:click="$set('showGroupForm', false)" class="px-3 py-1.5 border rounded text-sm">Cancel</button>
                     </div>
                 </form>
@@ -53,16 +55,27 @@
 
             <div class="space-y-2">
                 @forelse($groups as $group)
-                    <label class="flex items-center gap-2 text-sm cursor-pointer">
-                        <input
-                            type="checkbox"
-                            value="{{ $group->id }}"
-                            wire:model.live="selectedGroupIds"
-                            class="rounded"
-                        />
-                        <span class="flex-1">{{ $group->name }}</span>
-                        <span class="text-zinc-500">{{ $group->prospects_count }}</span>
-                    </label>
+                    <div class="flex items-center gap-2 text-sm">
+                        <label class="flex items-center gap-2 flex-1 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                value="{{ $group->id }}"
+                                wire:model.live="selectedGroupIds"
+                                class="rounded"
+                            />
+                            <span class="flex-1">{{ $group->name }}</span>
+                            <span class="text-zinc-500">{{ $group->prospects_count }}</span>
+                        </label>
+                        <button type="button" wire:click="openGroupForm('{{ $group->id }}')" class="text-xs text-blue-600 hover:underline">Edit</button>
+                        <button
+                            type="button"
+                            wire:click="deleteGroup('{{ $group->id }}')"
+                            wire:confirm="Delete group '{{ $group->name }}'? Prospects will be ungrouped."
+                            class="text-xs text-red-600 hover:underline"
+                        >
+                            Delete
+                        </button>
+                    </div>
                 @empty
                     <p class="text-sm text-zinc-500">No groups yet.</p>
                 @endforelse
@@ -196,13 +209,22 @@
             >
                 Move selected
             </button>
+            <button
+                type="button"
+                wire:click="deleteSelectedProspects"
+                wire:confirm="Delete the selected prospects? This cannot be undone."
+                class="px-4 py-2 text-red-600 border border-red-300 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
+            >
+                Delete selected
+            </button>
             <button type="button" wire:click="$set('selectedProspectIds', [])" class="px-4 py-2 border rounded">
                 Clear
             </button>
         </div>
     @endif
 
-    <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
+    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-center flex-1">
         <input
             type="text"
             wire:model.live.debounce.400ms="query"
@@ -223,7 +245,86 @@
             <option value="not_interested">Not interested</option>
             <option value="no_email">No email</option>
         </select>
+        </div>
+
+        <button type="button" wire:click="openProspectForm" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+            Add prospect
+        </button>
     </div>
+
+    @if($showProspectForm)
+        <div class="border rounded-lg p-4 space-y-4 dark:border-zinc-700">
+            <h3 class="text-lg font-semibold">{{ $edit_prospect_id ? 'Edit prospect' : 'Add prospect' }}</h3>
+            <form wire:submit.prevent="saveProspect" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Agency name</label>
+                    <input type="text" wire:model="prospect_agency_name" class="w-full border rounded p-2 bg-white dark:bg-zinc-700" />
+                    @error('prospect_agency_name') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Town</label>
+                    <input type="text" wire:model="prospect_town" class="w-full border rounded p-2 bg-white dark:bg-zinc-700" />
+                    @error('prospect_town') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Website</label>
+                    <input type="url" wire:model="prospect_website" class="w-full border rounded p-2 bg-white dark:bg-zinc-700" />
+                    @error('prospect_website') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Contact page URL</label>
+                    <input type="url" wire:model="prospect_contact_page_url" class="w-full border rounded p-2 bg-white dark:bg-zinc-700" />
+                    @error('prospect_contact_page_url') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Group</label>
+                    <select wire:model="prospect_group_id" class="w-full border rounded p-2 bg-white dark:bg-zinc-700">
+                        <option value="">No group</option>
+                        @foreach($groups as $group)
+                            <option value="{{ $group->id }}">{{ $group->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Outreach status</label>
+                    <select wire:model="prospect_outreach_status" class="w-full border rounded p-2 bg-white dark:bg-zinc-700">
+                        <option value="pending">Pending</option>
+                        <option value="reviewing">Reviewing</option>
+                        <option value="ready">Ready</option>
+                        <option value="contacted">Contacted</option>
+                        <option value="replied">Replied</option>
+                        <option value="not_interested">Not interested</option>
+                        <option value="no_email">No email</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Selected email</label>
+                    <input type="email" wire:model="prospect_selected_email" class="w-full border rounded p-2 bg-white dark:bg-zinc-700" />
+                    @error('prospect_selected_email') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Review status</label>
+                    <input type="text" wire:model="prospect_review_status" class="w-full border rounded p-2 bg-white dark:bg-zinc-700" />
+                </div>
+                <div class="md:col-span-2 flex gap-2">
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">
+                        {{ $edit_prospect_id ? 'Update prospect' : 'Create prospect' }}
+                    </button>
+                    <button type="button" wire:click="$set('showProspectForm', false)" class="px-4 py-2 border rounded">Cancel</button>
+                    @if($edit_prospect_id)
+                        <button
+                            type="button"
+                            wire:click="deleteProspect('{{ $edit_prospect_id }}')"
+                            wire:confirm="Delete this prospect? This cannot be undone."
+                            class="px-4 py-2 text-red-600 border border-red-300 rounded"
+                        >
+                            Delete
+                        </button>
+                    @endif
+                </div>
+            </form>
+        </div>
+    @endif
 
     <div class="overflow-x-auto">
         <table class="min-w-full border divide-y divide-zinc-200 dark:divide-zinc-800">
@@ -276,13 +377,30 @@
                         </td>
                         <td class="p-2 text-sm text-zinc-600 dark:text-zinc-300">{{ $prospect->review_status ?? '—' }}</td>
                         <td class="p-2 text-right">
-                            <a
-                                href="{{ route('prospects.show', $prospect) }}"
-                                class="px-3 py-1 border rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                                wire:navigate
-                            >
-                                Open
-                            </a>
+                            <div class="flex items-center justify-end gap-2">
+                                <button
+                                    type="button"
+                                    wire:click="openProspectForm('{{ $prospect->id }}')"
+                                    class="px-3 py-1 border rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                                >
+                                    Edit
+                                </button>
+                                <button
+                                    type="button"
+                                    wire:click="deleteProspect('{{ $prospect->id }}')"
+                                    wire:confirm="Delete {{ $prospect->agency_name }}? This cannot be undone."
+                                    class="px-3 py-1 text-red-600 border border-red-300 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
+                                >
+                                    Delete
+                                </button>
+                                <a
+                                    href="{{ route('prospects.show', $prospect) }}"
+                                    class="px-3 py-1 border rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                                    wire:navigate
+                                >
+                                    Open
+                                </a>
+                            </div>
                         </td>
                     </tr>
                 @empty
