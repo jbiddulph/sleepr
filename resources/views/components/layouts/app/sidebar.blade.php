@@ -30,6 +30,7 @@
                 </flux:navlist.group>
                 @can('admin')
                 <flux:navlist.group :heading="__('Admin')" class="grid">
+                    <flux:navlist.item icon="building-office" :href="route('prospects.index')" :current="request()->routeIs('prospects.*')" wire:navigate>{{ __('Prospects') }}</flux:navlist.item>
                     <flux:navlist.item icon="envelope" :href="route('admin.templates')" :current="request()->routeIs('admin.templates')" wire:navigate>{{ __('Templates') }}</flux:navlist.item>
                     <flux:navlist.item icon="folder" :href="route('admin.files')" :current="request()->routeIs('admin.files')" wire:navigate>{{ __('Files') }}</flux:navlist.item>
                 </flux:navlist.group>

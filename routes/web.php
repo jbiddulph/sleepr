@@ -9,6 +9,7 @@ use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Livewire\Admin\Recipients as AdminRecipients;
 use App\Livewire\Admin\Files as AdminFiles;
 use App\Livewire\Admin\Templates as AdminTemplates;
+use App\Models\EstateAgentProspect;
 
 Route::get('/', function () {
     return view('welcome');
@@ -49,4 +50,9 @@ Route::middleware(['auth', 'can:admin'])->group(function () {
     Route::get('/admin/recipients', AdminRecipients::class)->name('admin.recipients');
     Route::get('/admin/files', AdminFiles::class)->name('admin.files');
     Route::get('/admin/templates', AdminTemplates::class)->name('admin.templates');
+
+    Route::view('/prospects', 'prospects.index')->name('prospects.index');
+    Route::get('/prospects/{prospect}', function (EstateAgentProspect $prospect) {
+        return view('prospects.show', compact('prospect'));
+    })->name('prospects.show');
 });
