@@ -427,7 +427,11 @@ class Index extends Component
 
     public function saveTemplate(): void
     {
-        $this->validate();
+        $this->validate([
+            'template_name' => 'required|string|min:2|max:120',
+            'template_subject' => 'required|string|min:2|max:255',
+            'template_body' => 'required|string|min:10',
+        ]);
 
         if ($this->edit_template_id) {
             $template = EstateAgentOutreachTemplate::findOrFail($this->edit_template_id);
