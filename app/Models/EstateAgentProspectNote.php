@@ -21,6 +21,7 @@ class EstateAgentProspectNote extends Model
     {
         return [
             'sent_at' => 'datetime',
+            'scheduled_send_at' => 'datetime',
         ];
     }
 
@@ -32,6 +33,11 @@ class EstateAgentProspectNote extends Model
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function scheduledNote(): BelongsTo
+    {
+        return $this->belongsTo(Note::class, 'note_id');
     }
 
     public function typeLabel(): string

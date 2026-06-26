@@ -37,6 +37,36 @@
             </button>
         </div>
 
+        <div class="grid grid-cols-1 gap-3 xl:grid-cols-2">
+            <div>
+                <label class="block text-sm font-medium mb-1">First send time (UTC)</label>
+                <input
+                    type="datetime-local"
+                    step="600"
+                    wire:model.live="bulk_send_date"
+                    class="w-full border rounded p-2 bg-white dark:bg-zinc-700"
+                />
+                @error('bulk_send_date') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                <p class="text-xs text-zinc-500 mt-1">Use 10-minute increments. Scheduled emails appear in Notes and send automatically.</p>
+            </div>
+
+            <div class="space-y-3">
+                <label class="flex items-center gap-2 text-sm">
+                    <input type="checkbox" wire:model.live="bulk_stagger" class="rounded" />
+                    Spread sends in groups of 33 every 10 minutes
+                </label>
+                <label class="flex items-center gap-2 text-sm">
+                    <input type="checkbox" wire:model.live="onlyReadyForBulk" class="rounded" />
+                    Only prospects marked ready
+                </label>
+                @if($this->bulkSendWindow)
+                    <p class="text-sm text-zinc-600 dark:text-zinc-300">
+                        Send window: <span class="font-medium">{{ $this->bulkSendWindow }}</span>
+                    </p>
+                @endif
+            </div>
+        </div>
+
         <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
             <div class="flex-1">
                 <label class="block text-sm font-medium mb-1">Template</label>
@@ -48,19 +78,14 @@
                 </select>
             </div>
 
-            <label class="flex items-center gap-2 text-sm">
-                <input type="checkbox" wire:model.live="onlyReadyForBulk" class="rounded" />
-                Only prospects marked ready
-            </label>
-
             <button
                 type="button"
                 wire:click="bulkCreateDrafts"
-                wire:confirm="Create email drafts for matching prospects that have an email address?"
-                @disabled(! $template_id)
+                wire:confirm="Schedule outreach emails for matching prospects that have an email address?"
+                @disabled(! $template_id || ! $bulk_send_date)
                 class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
             >
-                Create drafts ({{ $this->bulkTargetCount }})
+                Schedule emails ({{ $this->bulkTargetCount }})
             </button>
         </div>
 

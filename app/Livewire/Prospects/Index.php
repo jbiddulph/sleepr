@@ -4,7 +4,8 @@ namespace App\Livewire\Prospects;
 
 use App\Models\EstateAgentOutreachTemplate;
 use App\Models\EstateAgentProspect;
-use App\Models\EstateAgentProspectNote;
+use App\Services\ScheduleProspectOutreachNotes;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Validate;
@@ -25,6 +26,10 @@ class Index extends Component
 
     public bool $onlyReadyForBulk = true;
 
+    public ?string $bulk_send_date = null;
+
+    public bool $bulk_stagger = true;
+
     public string $status = '';
 
     public bool $showTemplateForm = false;
@@ -43,6 +48,10 @@ class Index extends Component
     public function mount(): void
     {
         $this->template_id = session('prospects_template_id');
+        $this->bulk_send_date = now('UTC')
+            ->addDay()
+            ->setTime(10, 0)
+            ->format('Y-m-d\TH:i');
     }
 
     public function updatedTemplateId(): void
@@ -106,10 +115,15 @@ class Index extends Component
         $this->reset(['edit_template_id', 'template_name', 'template_subject', 'template_body']);
     }
 
-    public function bulkCreateDrafts(): void
+    public function bulkCreateDrafts(ScheduleProspectOutreachNotes $scheduler): void
     {
         if (! $this->template_id) {
             $this->status = __('Choose a template first.');
+            return;
+        }
+
+        if ($error = $scheduler->validateSendDate($this->bulk_send_date)) {
+            $this->addError('bulk_send_date', $error);
             return;
         }
 
@@ -131,45 +145,22 @@ class Index extends Component
             })
             ->get();
 
-        $created = 0;
+        $created = $scheduler->schedule(
+            prospects: $prospects,
+            template: $template,
+            user: Auth::user(),
+            startAt: Carbon::parse($this->bulk_send_date, 'UTC'),
+            stagger: $this->bulk_stagger,
+        );
 
-        foreach ($prospects as $prospect) {
-            $emailTo = $prospect->selected_email
-                ?: ($prospect->best_emails[0] ?? null)
-                ?: ($prospect->emails_found[0] ?? null);
+        $window = $this->bulk_stagger
+            ? __('Emails are spread in groups of 33 every 10 minutes.')
+            : __('All emails are scheduled for the same time.');
 
-            if (! $emailTo) {
-                continue;
-            }
-
-            $hasDraft = $prospect->notes()
-                ->where('note_type', 'email_draft')
-                ->where('subject', $template->renderSubject($prospect, Auth::user()))
-                ->exists();
-
-            if ($hasDraft) {
-                continue;
-            }
-
-            EstateAgentProspectNote::create([
-                'id' => (string) Str::uuid(),
-                'prospect_id' => $prospect->id,
-                'created_by' => Auth::id(),
-                'note_type' => 'email_draft',
-                'subject' => $template->renderSubject($prospect, Auth::user()),
-                'body' => $template->renderBody($prospect, Auth::user()),
-                'email_to' => $emailTo,
-                'email_from' => Auth::user()?->email,
-            ]);
-
-            if (! $prospect->selected_email) {
-                $prospect->update(['selected_email' => $emailTo]);
-            }
-
-            $created++;
-        }
-
-        $this->status = __('Created :count email drafts from template.', ['count' => $created]);
+        $this->status = __('Scheduled :count outreach emails. :window They will appear in Notes and send automatically.', [
+            'count' => $created,
+            'window' => $window,
+        ]);
     }
 
     protected function prospectsQuery()
@@ -200,6 +191,28 @@ class Index extends Component
                     ->orWhereRaw('coalesce(array_length(emails_found, 1), 0) > 0');
             })
             ->count();
+    }
+
+    public function getBulkSendWindowProperty(): ?string
+    {
+        if (! $this->bulk_send_date || $this->bulkTargetCount === 0) {
+            return null;
+        }
+
+        try {
+            $start = Carbon::parse($this->bulk_send_date, 'UTC');
+        } catch (\Throwable) {
+            return null;
+        }
+
+        if (! $this->bulk_stagger) {
+            return $start->format('M j, Y g:i A').' UTC';
+        }
+
+        $slots = (int) ceil($this->bulkTargetCount / 33);
+        $end = $start->copy()->addMinutes(max(0, $slots - 1) * 10);
+
+        return $start->format('M j, Y g:i A').' – '.$end->format('g:i A').' UTC';
     }
 
     public function render()

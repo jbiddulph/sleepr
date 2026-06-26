@@ -176,6 +176,11 @@
                         @if($note->email_to)
                             <p class="text-sm text-zinc-600 dark:text-zinc-300 mt-1">To: {{ $note->email_to }}</p>
                         @endif
+                        @if($note->scheduled_send_at)
+                            <p class="text-sm text-zinc-600 dark:text-zinc-300 mt-1">
+                                Scheduled: {{ $note->scheduled_send_at->format('M j, Y g:i A') }} UTC
+                            </p>
+                        @endif
                         <p class="text-sm mt-2 whitespace-pre-wrap">{{ $note->body }}</p>
                         <p class="text-xs text-zinc-500 mt-2">
                             {{ $note->author?->name ?? 'Unknown user' }}
