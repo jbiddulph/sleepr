@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class EstateAgentProspect extends Model
@@ -30,6 +31,11 @@ class EstateAgentProspect extends Model
     public function notes(): HasMany
     {
         return $this->hasMany(EstateAgentProspectNote::class, 'prospect_id');
+    }
+
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(EstateAgentProspectGroup::class, 'group_id');
     }
 
     public function emailOptions(): array

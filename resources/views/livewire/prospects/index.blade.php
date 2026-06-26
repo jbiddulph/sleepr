@@ -21,6 +21,55 @@
         </div>
     </div>
 
+    <div class="grid grid-cols-1 gap-6 xl:grid-cols-[260px_minmax(0,1fr)]">
+        <div class="border rounded-lg p-4 space-y-4 dark:border-zinc-700 h-fit">
+            <div class="flex items-center justify-between gap-2">
+                <h2 class="text-lg font-semibold">Groups</h2>
+                <button type="button" wire:click="$set('showGroupForm', true)" class="text-sm text-blue-600 hover:underline">
+                    New
+                </button>
+            </div>
+
+            @if($showGroupForm)
+                <form wire:submit.prevent="saveGroup" class="space-y-3">
+                    <input
+                        type="text"
+                        wire:model="group_name"
+                        class="w-full border rounded p-2 bg-white dark:bg-zinc-700"
+                        placeholder="Group name"
+                    />
+                    @error('group_name') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
+                    <div class="flex gap-2">
+                        <button type="submit" class="px-3 py-1.5 bg-blue-600 text-white rounded text-sm">Save</button>
+                        <button type="button" wire:click="$set('showGroupForm', false)" class="px-3 py-1.5 border rounded text-sm">Cancel</button>
+                    </div>
+                </form>
+            @endif
+
+            <div class="flex gap-2 text-xs">
+                <button type="button" wire:click="selectAllGroups" class="text-blue-600 hover:underline">All</button>
+                <button type="button" wire:click="clearGroupSelection" class="text-blue-600 hover:underline">None</button>
+            </div>
+
+            <div class="space-y-2">
+                @forelse($groups as $group)
+                    <label class="flex items-center gap-2 text-sm cursor-pointer">
+                        <input
+                            type="checkbox"
+                            value="{{ $group->id }}"
+                            wire:model.live="selectedGroupIds"
+                            class="rounded"
+                        />
+                        <span class="flex-1">{{ $group->name }}</span>
+                        <span class="text-zinc-500">{{ $group->prospects_count }}</span>
+                    </label>
+                @empty
+                    <p class="text-sm text-zinc-500">No groups yet.</p>
+                @endforelse
+            </div>
+        </div>
+
+        <div class="space-y-6">
     <div class="border rounded-lg p-4 space-y-4 dark:border-zinc-700">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -131,6 +180,28 @@
         </div>
     @endif
 
+    @if($selectedProspectIds !== [])
+        <div class="border rounded-lg p-4 flex flex-col gap-3 lg:flex-row lg:items-center dark:border-zinc-700">
+            <p class="text-sm font-medium">{{ count($selectedProspectIds) }} prospect(s) selected</p>
+            <select wire:model="move_to_group_id" class="border rounded p-2 bg-white dark:bg-zinc-700">
+                <option value="">Move to group...</option>
+                @foreach($groups as $group)
+                    <option value="{{ $group->id }}">{{ $group->name }}</option>
+                @endforeach
+            </select>
+            <button
+                type="button"
+                wire:click="moveSelectedProspects"
+                class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+                Move selected
+            </button>
+            <button type="button" wire:click="$set('selectedProspectIds', [])" class="px-4 py-2 border rounded">
+                Clear
+            </button>
+        </div>
+    @endif
+
     <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
         <input
             type="text"
@@ -158,8 +229,17 @@
         <table class="min-w-full border divide-y divide-zinc-200 dark:divide-zinc-800">
             <thead class="bg-zinc-50 dark:bg-zinc-900">
                 <tr>
+                    <th class="p-2 w-10">
+                        <input
+                            type="checkbox"
+                            wire:click="togglePageSelection"
+                            @checked($this->allPageProspectsSelected)
+                            class="rounded"
+                        />
+                    </th>
                     <th class="p-2 text-left text-sm font-medium">Agency</th>
                     <th class="p-2 text-left text-sm font-medium">Town</th>
+                    <th class="p-2 text-left text-sm font-medium">Group</th>
                     <th class="p-2 text-left text-sm font-medium">Best email</th>
                     <th class="p-2 text-left text-sm font-medium">Status</th>
                     <th class="p-2 text-left text-sm font-medium">Review</th>
@@ -169,8 +249,17 @@
             <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
                 @forelse($prospects as $prospect)
                     <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-900/50">
+                        <td class="p-2">
+                            <input
+                                type="checkbox"
+                                value="{{ $prospect->id }}"
+                                wire:model.live="selectedProspectIds"
+                                class="rounded"
+                            />
+                        </td>
                         <td class="p-2 font-medium">{{ $prospect->agency_name }}</td>
                         <td class="p-2">{{ $prospect->town }}</td>
+                        <td class="p-2 text-sm text-zinc-600 dark:text-zinc-300">{{ $prospect->group?->name ?? '—' }}</td>
                         <td class="p-2">
                             @if($prospect->selected_email)
                                 {{ $prospect->selected_email }}
@@ -198,7 +287,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="p-6 text-center text-zinc-500">No prospects match your filters.</td>
+                        <td colspan="8" class="p-6 text-center text-zinc-500">No prospects match your filters.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -207,5 +296,7 @@
 
     <div>
         {{ $prospects->links() }}
+    </div>
+        </div>
     </div>
 </div>

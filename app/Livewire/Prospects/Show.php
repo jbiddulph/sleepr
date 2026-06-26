@@ -4,6 +4,7 @@ namespace App\Livewire\Prospects;
 
 use App\Models\EstateAgentOutreachTemplate;
 use App\Models\EstateAgentProspect;
+use App\Models\EstateAgentProspectGroup;
 use App\Models\EstateAgentProspectNote;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -21,6 +22,8 @@ class Show extends Component
     public ?string $selected_email = null;
 
     public ?string $template_id = null;
+
+    public ?string $group_id = null;
 
     #[Validate('required|in:note,email_draft,email_sent,call')]
     public string $note_type = 'note';
@@ -42,6 +45,7 @@ class Show extends Component
         $this->prospect = $prospect;
         $this->outreach_status = (string) $prospect->outreach_status;
         $this->selected_email = $prospect->selected_email;
+        $this->group_id = $prospect->group_id;
         $this->email_to = $prospect->selected_email;
         $this->email_from = Auth::user()?->email;
         $this->template_id = session('prospects_template_id');
@@ -94,11 +98,13 @@ class Show extends Component
         $this->validate([
             'outreach_status' => 'required|in:pending,reviewing,ready,contacted,replied,not_interested,no_email',
             'selected_email' => 'nullable|email',
+            'group_id' => 'nullable|uuid',
         ]);
 
         $this->prospect->update([
             'outreach_status' => $this->outreach_status,
             'selected_email' => $this->selected_email ?: null,
+            'group_id' => $this->group_id ?: null,
             'last_contacted_at' => $this->outreach_status === 'contacted'
                 ? now()
                 : $this->prospect->last_contacted_at,
@@ -160,6 +166,7 @@ class Show extends Component
             'notes' => $notes,
             'emailOptions' => $this->prospect->emailOptions(),
             'templates' => $templates,
+            'groups' => EstateAgentProspectGroup::query()->orderBy('name')->get(),
         ]);
     }
 }

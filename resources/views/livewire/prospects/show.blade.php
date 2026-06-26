@@ -26,6 +26,16 @@
 
                 <form wire:submit.prevent="saveProspect" class="space-y-4">
                     <div>
+                        <label class="block text-sm font-medium mb-1">Group</label>
+                        <select wire:model="group_id" class="w-full border rounded p-2 bg-white dark:bg-zinc-700">
+                            <option value="">No group</option>
+                            @foreach($groups as $group)
+                                <option value="{{ $group->id }}">{{ $group->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
                         <label class="block text-sm font-medium mb-1">Outreach status</label>
                         <select wire:model="outreach_status" class="w-full border rounded p-2 bg-white dark:bg-zinc-700">
                             <option value="pending">Pending</option>

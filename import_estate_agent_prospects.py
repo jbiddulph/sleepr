@@ -9,7 +9,9 @@ import requests
 
 CSV_PATH = Path(__file__).parent / "extracted_estate_agent_emails.csv"
 TABLE = "sleepr_estate_agent_prospects"
+GROUPS_TABLE = "sleepr_estate_agent_prospect_groups"
 BATCH_SIZE = 50
+DEFAULT_GROUP_NAME = "Agents"
 
 
 def load_env(path: Path) -> None:
@@ -41,13 +43,28 @@ def map_outreach_status(review_status: str) -> str:
     return "pending"
 
 
-def row_to_record(row: dict) -> dict:
+def fetch_agents_group_id(url: str, key: str) -> str | None:
+    response = requests.get(
+        f"{url}/rest/v1/{GROUPS_TABLE}",
+        headers={
+            "apikey": key,
+            "Authorization": f"Bearer {key}",
+        },
+        params={"name": f"eq.{DEFAULT_GROUP_NAME}", "select": "id"},
+        timeout=30,
+    )
+    response.raise_for_status()
+    rows = response.json()
+    return rows[0]["id"] if rows else None
+
+
+def row_to_record(row: dict, group_id: str | None) -> dict:
     best = parse_emails(row.get("best_emails", ""))
     other = parse_emails(row.get("other_business_emails", ""))
     found = parse_emails(row.get("emails_found", ""))
     review_status = row.get("review_status", "").strip()
 
-    return {
+    record = {
         "agency_name": row.get("agency_name", "").strip(),
         "town": row.get("town", "").strip(),
         "website": row.get("website", "").strip() or None,
@@ -60,6 +77,9 @@ def row_to_record(row: dict) -> dict:
         "outreach_status": map_outreach_status(review_status),
         "selected_email": best[0] if best else None,
     }
+    if group_id:
+        record["group_id"] = group_id
+    return record
 
 
 def main() -> int:
@@ -76,7 +96,8 @@ def main() -> int:
         return 1
 
     with CSV_PATH.open(newline="", encoding="utf-8") as f:
-        rows = [row_to_record(r) for r in csv.DictReader(f)]
+        group_id = fetch_agents_group_id(url, key)
+        rows = [row_to_record(r, group_id) for r in csv.DictReader(f)]
 
     endpoint = f"{url}/rest/v1/{TABLE}?on_conflict=agency_name,town"
     headers = {

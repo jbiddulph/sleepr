@@ -4,6 +4,7 @@ namespace App\Livewire\Prospects;
 
 use App\Models\EstateAgentOutreachTemplate;
 use App\Models\EstateAgentProspect;
+use App\Models\EstateAgentProspectGroup;
 use App\Services\ScheduleProspectOutreachNotes;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -22,6 +23,14 @@ class Index extends Component
 
     public string $statusFilter = 'all';
 
+    /** @var array<int, string> */
+    public array $selectedGroupIds = [];
+
+    /** @var array<int, string> */
+    public array $selectedProspectIds = [];
+
+    public ?string $move_to_group_id = null;
+
     public ?string $template_id = null;
 
     public bool $onlyReadyForBulk = true;
@@ -34,6 +43,8 @@ class Index extends Component
 
     public bool $showTemplateForm = false;
 
+    public bool $showGroupForm = false;
+
     public ?string $edit_template_id = null;
 
     #[Validate('required|string|min:2|max:120')]
@@ -45,6 +56,9 @@ class Index extends Component
     #[Validate('required|string|min:10')]
     public string $template_body = '';
 
+    #[Validate('required|string|min:2|max:120')]
+    public string $group_name = '';
+
     public function mount(): void
     {
         $this->template_id = session('prospects_template_id');
@@ -52,6 +66,18 @@ class Index extends Component
             ->addDay()
             ->setTime(10, 0)
             ->format('Y-m-d\TH:i');
+
+        $storedGroupIds = session('prospects_group_ids');
+        if (is_array($storedGroupIds) && $storedGroupIds !== []) {
+            $this->selectedGroupIds = $storedGroupIds;
+        } else {
+            $agentsGroupId = EstateAgentProspectGroup::query()
+                ->where('name', 'Agents')
+                ->value('id');
+
+            $this->selectedGroupIds = $agentsGroupId ? [$agentsGroupId] : [];
+            session(['prospects_group_ids' => $this->selectedGroupIds]);
+        }
     }
 
     public function updatedTemplateId(): void
@@ -59,14 +85,124 @@ class Index extends Component
         session(['prospects_template_id' => $this->template_id]);
     }
 
+    public function updatedSelectedGroupIds(): void
+    {
+        session(['prospects_group_ids' => $this->selectedGroupIds]);
+        $this->resetPage();
+        $this->selectedProspectIds = [];
+    }
+
     public function updatedQuery(): void
     {
         $this->resetPage();
+        $this->selectedProspectIds = [];
     }
 
     public function updatedStatusFilter(): void
     {
         $this->resetPage();
+        $this->selectedProspectIds = [];
+    }
+
+    public function selectAllGroups(): void
+    {
+        $this->selectedGroupIds = EstateAgentProspectGroup::query()
+            ->orderBy('name')
+            ->pluck('id')
+            ->all();
+        session(['prospects_group_ids' => $this->selectedGroupIds]);
+        $this->resetPage();
+        $this->selectedProspectIds = [];
+    }
+
+    public function clearGroupSelection(): void
+    {
+        $this->selectedGroupIds = [];
+        session(['prospects_group_ids' => []]);
+        $this->resetPage();
+        $this->selectedProspectIds = [];
+    }
+
+    public function toggleProspect(string $prospectId): void
+    {
+        if (in_array($prospectId, $this->selectedProspectIds, true)) {
+            $this->selectedProspectIds = array_values(array_filter(
+                $this->selectedProspectIds,
+                fn (string $id): bool => $id !== $prospectId
+            ));
+        } else {
+            $this->selectedProspectIds[] = $prospectId;
+        }
+    }
+
+    public function togglePageSelection(): void
+    {
+        $pageIds = $this->prospectsQuery()
+            ->orderBy('town')
+            ->orderBy('agency_name')
+            ->forPage($this->getPage(), 25)
+            ->pluck('id')
+            ->all();
+
+        $allSelected = $pageIds !== []
+            && collect($pageIds)->every(fn (string $id): bool => in_array($id, $this->selectedProspectIds, true));
+
+        if ($allSelected) {
+            $this->selectedProspectIds = array_values(array_filter(
+                $this->selectedProspectIds,
+                fn (string $id): bool => ! in_array($id, $pageIds, true)
+            ));
+        } else {
+            $this->selectedProspectIds = array_values(array_unique([
+                ...$this->selectedProspectIds,
+                ...$pageIds,
+            ]));
+        }
+    }
+
+    public function moveSelectedProspects(): void
+    {
+        if ($this->selectedProspectIds === [] || ! $this->move_to_group_id) {
+            $this->status = __('Select prospects and a target group first.');
+            return;
+        }
+
+        $group = EstateAgentProspectGroup::find($this->move_to_group_id);
+        if (! $group) {
+            $this->status = __('Target group not found.');
+            return;
+        }
+
+        $moved = EstateAgentProspect::query()
+            ->whereIn('id', $this->selectedProspectIds)
+            ->update(['group_id' => $group->id]);
+
+        $this->selectedProspectIds = [];
+        $this->move_to_group_id = null;
+        $this->status = __('Moved :count prospects to :group.', [
+            'count' => $moved,
+            'group' => $group->name,
+        ]);
+    }
+
+    public function saveGroup(): void
+    {
+        $this->validateOnly('group_name');
+
+        $group = EstateAgentProspectGroup::create([
+            'id' => (string) Str::uuid(),
+            'name' => $this->group_name,
+        ]);
+
+        $this->selectedGroupIds = array_values(array_unique([
+            ...$this->selectedGroupIds,
+            $group->id,
+        ]));
+        session(['prospects_group_ids' => $this->selectedGroupIds]);
+
+        $this->showGroupForm = false;
+        $this->group_name = '';
+        $this->status = __('Group :name created.', ['name' => $group->name]);
     }
 
     public function openTemplateForm(?string $templateId = null): void
@@ -166,6 +302,8 @@ class Index extends Component
     protected function prospectsQuery()
     {
         return EstateAgentProspect::query()
+            ->with('group')
+            ->when($this->selectedGroupIds !== [], fn ($q) => $q->whereIn('group_id', $this->selectedGroupIds))
             ->when($this->query !== '', function ($q) {
                 $term = '%'.$this->query.'%';
                 $q->where(function ($inner) use ($term) {
@@ -215,6 +353,24 @@ class Index extends Component
         return $start->format('M j, Y g:i A').' – '.$end->format('g:i A').' UTC';
     }
 
+    public function getPageProspectIdsProperty(): array
+    {
+        return $this->prospectsQuery()
+            ->orderBy('town')
+            ->orderBy('agency_name')
+            ->forPage($this->getPage(), 25)
+            ->pluck('id')
+            ->all();
+    }
+
+    public function getAllPageProspectsSelectedProperty(): bool
+    {
+        $pageIds = $this->pageProspectIds;
+
+        return $pageIds !== []
+            && collect($pageIds)->every(fn (string $id): bool => in_array($id, $this->selectedProspectIds, true));
+    }
+
     public function render()
     {
         $prospects = $this->prospectsQuery()
@@ -222,10 +378,18 @@ class Index extends Component
             ->orderBy('agency_name')
             ->paginate(25);
 
-        $counts = EstateAgentProspect::query()
+        $countsQuery = EstateAgentProspect::query()
+            ->when($this->selectedGroupIds !== [], fn ($q) => $q->whereIn('group_id', $this->selectedGroupIds));
+
+        $counts = (clone $countsQuery)
             ->selectRaw('outreach_status, count(*) as total')
             ->groupBy('outreach_status')
             ->pluck('total', 'outreach_status');
+
+        $groups = EstateAgentProspectGroup::query()
+            ->withCount('prospects')
+            ->orderBy('name')
+            ->get();
 
         $templates = EstateAgentOutreachTemplate::query()
             ->where('is_active', true)
@@ -235,6 +399,7 @@ class Index extends Component
         return view('livewire.prospects.index', [
             'prospects' => $prospects,
             'counts' => $counts,
+            'groups' => $groups,
             'templates' => $templates,
         ]);
     }
