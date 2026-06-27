@@ -21,3 +21,10 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Prospect data — keep CSVs and large downloads out of git
+*.csv
+*.xlsx
+/storage/companies_house/
+/storage/*.log
+/prospect_seeds/*.csv

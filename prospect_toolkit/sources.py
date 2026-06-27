@@ -150,7 +150,7 @@ def build_software_prospect_list(
     website_lookup = build_name_lookup(directory_records)
     print(f"directory sources: {len(directory_records)} rows, {len(website_lookup)} website lookups")
 
-    ch_records = collect_companies_house_bulk(target=max(target + 5000, 15000))
+    ch_records = collect_companies_house_bulk(target=max(target + 5000, 15000), industry="software")
     attached = attach_websites_from_lookup(ch_records, website_lookup)
     print(f"companies_house_bulk: attached websites to {attached} records")
 
@@ -160,6 +160,104 @@ def build_software_prospect_list(
             f"Only collected {len(merged)} unique software companies; expected at least {target}."
         )
 
+    with_website = [record for record in merged if record.website]
+    without_website = [record for record in merged if not record.website]
+    selected = (with_website + without_website)[:target]
+    website_count = sum(1 for record in selected if record.website)
+    print(f"selected {len(selected)} prospects ({website_count} with websites)")
+
+    for record in selected:
+        if record.website and not record.contact_page_url:
+            record.contact_page_url = record.website.rstrip("/") + industry.contact_paths[0]
+
+    if enrich_contacts:
+        enrich_contact_pages(selected, industry)
+
+    return [record.to_row(industry) for record in selected]
+
+
+def build_property_management_prospect_list(
+    industry: IndustryConfig,
+    target: int,
+    seed_path: Path | None = None,
+    delay: float = 0.05,
+    enrich_contacts: bool = False,
+) -> list[dict[str, str]]:
+    from prospect_toolkit.companies_house_bulk import (
+        attach_websites_from_lookup,
+        build_name_lookup,
+        collect_companies_house_bulk,
+    )
+    from prospect_toolkit.thomsonlocal import collect_thomsonlocal
+
+    directory_records: list[ProspectRecord] = []
+    if seed_path and seed_path.exists():
+        directory_records.extend(load_seed_file(seed_path, industry))
+        print(f"seed: {len(directory_records)} records")
+
+    directory_records.extend(
+        collect_thomsonlocal(target=target, industry="property_management", delay=delay)
+    )
+    website_lookup = build_name_lookup(directory_records)
+    print(f"thomsonlocal: {len(directory_records)} rows, {len(website_lookup)} website lookups")
+
+    ch_records = collect_companies_house_bulk(
+        target=max(target + 2000, 5000),
+        industry="property_management",
+    )
+    attached = attach_websites_from_lookup(ch_records, website_lookup)
+    print(f"companies_house_bulk: attached websites to {attached} records")
+
+    merged = merge_records(directory_records + ch_records)
+    with_website = [record for record in merged if record.website]
+    without_website = [record for record in merged if not record.website]
+    selected = (with_website + without_website)[:target]
+    website_count = sum(1 for record in selected if record.website)
+    print(f"selected {len(selected)} prospects ({website_count} with websites)")
+
+    for record in selected:
+        if record.website and not record.contact_page_url:
+            record.contact_page_url = record.website.rstrip("/") + industry.contact_paths[0]
+
+    if enrich_contacts:
+        enrich_contact_pages(selected, industry)
+
+    return [record.to_row(industry) for record in selected]
+
+
+def build_construction_prospect_list(
+    industry: IndustryConfig,
+    target: int,
+    seed_path: Path | None = None,
+    delay: float = 0.05,
+    enrich_contacts: bool = False,
+) -> list[dict[str, str]]:
+    from prospect_toolkit.companies_house_bulk import (
+        attach_websites_from_lookup,
+        build_name_lookup,
+        collect_companies_house_bulk,
+    )
+    from prospect_toolkit.thomsonlocal import collect_thomsonlocal
+
+    directory_records: list[ProspectRecord] = []
+    if seed_path and seed_path.exists():
+        directory_records.extend(load_seed_file(seed_path, industry))
+        print(f"seed: {len(directory_records)} records")
+
+    directory_records.extend(
+        collect_thomsonlocal(target=target, industry="construction", delay=delay)
+    )
+    website_lookup = build_name_lookup(directory_records)
+    print(f"thomsonlocal: {len(directory_records)} rows, {len(website_lookup)} website lookups")
+
+    ch_records = collect_companies_house_bulk(
+        target=max(target + 2000, 5000),
+        industry="construction",
+    )
+    attached = attach_websites_from_lookup(ch_records, website_lookup)
+    print(f"companies_house_bulk: attached websites to {attached} records")
+
+    merged = merge_records(directory_records + ch_records)
     with_website = [record for record in merged if record.website]
     without_website = [record for record in merged if not record.website]
     selected = (with_website + without_website)[:target]
@@ -544,6 +642,24 @@ def build_prospect_list(
         return build_software_prospect_list(
             industry=industry,
             target=target,
+            delay=delay,
+            enrich_contacts=enrich_contacts,
+        )
+
+    if industry.slug == "property_management":
+        return build_property_management_prospect_list(
+            industry=industry,
+            target=target,
+            seed_path=seed_path,
+            delay=delay,
+            enrich_contacts=enrich_contacts,
+        )
+
+    if industry.slug == "construction":
+        return build_construction_prospect_list(
+            industry=industry,
+            target=target,
+            seed_path=seed_path,
             delay=delay,
             enrich_contacts=enrich_contacts,
         )

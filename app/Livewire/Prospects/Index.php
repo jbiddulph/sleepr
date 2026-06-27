@@ -9,7 +9,6 @@ use App\Services\ScheduleProspectOutreachNotes;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -53,40 +52,28 @@ class Index extends Component
 
     public ?string $edit_template_id = null;
 
-    #[Validate('required|string|min:2|max:120')]
     public string $template_name = '';
 
-    #[Validate('required|string|min:2|max:255')]
     public string $template_subject = '';
 
-    #[Validate('required|string|min:10')]
     public string $template_body = '';
 
-    #[Validate('required|string|min:2|max:120')]
     public string $group_name = '';
 
-    #[Validate('required|string|min:2|max:255')]
     public string $prospect_agency_name = '';
 
-    #[Validate('required|string|min:2|max:255')]
     public string $prospect_town = '';
 
-    #[Validate('nullable|url|max:500')]
     public ?string $prospect_website = null;
 
-    #[Validate('nullable|url|max:500')]
     public ?string $prospect_contact_page_url = null;
 
-    #[Validate('nullable|uuid')]
     public ?string $prospect_group_id = null;
 
-    #[Validate('required|in:pending,reviewing,ready,contacted,replied,not_interested,no_email')]
     public string $prospect_outreach_status = 'pending';
 
-    #[Validate('nullable|email|max:255')]
     public ?string $prospect_selected_email = null;
 
-    #[Validate('nullable|string|max:255')]
     public ?string $prospect_review_status = null;
 
     public function mount(): void
@@ -230,7 +217,11 @@ class Index extends Component
 
     public function saveGroup(): void
     {
-        $this->validateOnly('group_name');
+        $this->resetErrorBag();
+
+        $this->validate([
+            'group_name' => 'required|string|min:2|max:120',
+        ]);
 
         if ($this->edit_group_id) {
             $group = EstateAgentProspectGroup::findOrFail($this->edit_group_id);
@@ -309,6 +300,8 @@ class Index extends Component
 
     public function saveProspect(): void
     {
+        $this->resetErrorBag();
+
         $this->validate([
             'prospect_agency_name' => 'required|string|min:2|max:255',
             'prospect_town' => 'required|string|min:2|max:255',
@@ -420,6 +413,7 @@ class Index extends Component
             $this->template_body = $template->body;
         } else {
             $this->reset(['template_name', 'template_subject', 'template_body']);
+            $this->template_name = 'ZapTask outreach';
             $this->template_subject = 'Quick idea for {{agency_name}} in {{town}}';
             $this->template_body = "Hi there,\n\nI came across {{agency_name}} in {{town}} and wanted to reach out.\n\nBest regards,\n{{sender_name}}";
         }
@@ -427,7 +421,17 @@ class Index extends Component
 
     public function saveTemplate(): void
     {
-        $this->validate();
+        $this->resetErrorBag();
+
+        $validated = $this->validate([
+            'template_name' => 'required|string|min:2|max:120',
+            'template_subject' => 'required|string|min:2|max:255',
+            'template_body' => 'required|string|min:10',
+        ]);
+
+        $this->template_name = $validated['template_name'];
+        $this->template_subject = $validated['template_subject'];
+        $this->template_body = $validated['template_body'];
 
         if ($this->edit_template_id) {
             $template = EstateAgentOutreachTemplate::findOrFail($this->edit_template_id);

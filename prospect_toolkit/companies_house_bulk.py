@@ -22,6 +22,79 @@ SOFTWARE_SIC_PREFIXES = (
     "63120",
 )
 
+PROPERTY_MANAGEMENT_SIC_PREFIXES = (
+    "68310",
+    "68320",
+    "68209",
+    "68201",
+    "68202",
+)
+
+CONSTRUCTION_SIC_PREFIXES = (
+    "41201",
+    "41202",
+    "42110",
+    "42120",
+    "42130",
+    "42210",
+    "42220",
+    "42910",
+    "42990",
+    "43110",
+    "43120",
+    "43210",
+    "43220",
+    "43290",
+    "43310",
+    "43320",
+    "43330",
+    "43341",
+    "43342",
+    "43910",
+    "43991",
+    "43999",
+)
+
+SIC_PROFILES: dict[str, tuple[str, ...]] = {
+    "software": SOFTWARE_SIC_PREFIXES,
+    "property_management": PROPERTY_MANAGEMENT_SIC_PREFIXES,
+    "construction": CONSTRUCTION_SIC_PREFIXES,
+}
+
+SIC_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "software": (
+        "software",
+        "computer programming",
+        "information technology",
+        "data processing",
+        "web portal",
+        "computer consultancy",
+    ),
+    "property_management": (
+        "management of real estate",
+        "property management",
+        "real estate agencies",
+        "letting and operating",
+        "renting and operating",
+        "buying and selling of own real estate",
+        "real estate",
+    ),
+    "construction": (
+        "construction",
+        "building",
+        "civil engineering",
+        "demolition",
+        "site preparation",
+        "electrical installation",
+        "plumbing",
+        "plastering",
+        "joinery installation",
+        "roofing",
+        "scaffold",
+        "specialised construction",
+    ),
+}
+
 COMPANY_SUFFIXES = re.compile(
     r"\b(LTD|LIMITED|PLC|LLP|CIC|CYFYNGEDIG|CYF|GROUP|HOLDINGS|HOLDING|UK|SERVICES|SERVICE|"
     r"SOLUTIONS|SOLUTION|SYSTEMS|SYSTEM|TECHNOLOGIES|TECHNOLOGY|TECH|SOFTWARE|CONSULTING|"
@@ -38,21 +111,15 @@ def normalise_company_name(name: str) -> str:
     return cleaned
 
 
-def sic_matches(sic_text: str) -> bool:
+def sic_matches(sic_text: str, industry: str = "software") -> bool:
     if not sic_text:
         return False
-    for prefix in SOFTWARE_SIC_PREFIXES:
+    prefixes = SIC_PROFILES.get(industry, SOFTWARE_SIC_PREFIXES)
+    keywords = SIC_KEYWORDS.get(industry, SIC_KEYWORDS["software"])
+    for prefix in prefixes:
         if sic_text.strip().startswith(prefix):
             return True
     lowered = sic_text.lower()
-    keywords = (
-        "software",
-        "computer programming",
-        "information technology",
-        "data processing",
-        "web portal",
-        "computer consultancy",
-    )
     return any(keyword in lowered for keyword in keywords)
 
 
@@ -79,7 +146,7 @@ def ensure_bulk_csv() -> Path:
     return csv_path
 
 
-def collect_companies_house_bulk(target: int) -> list[ProspectRecord]:
+def collect_companies_house_bulk(target: int, industry: str = "software") -> list[ProspectRecord]:
     csv_path = ensure_bulk_csv()
     records: list[ProspectRecord] = []
 
@@ -95,7 +162,7 @@ def collect_companies_house_bulk(target: int) -> list[ProspectRecord]:
                 row.get("SICCode.SicText_3", ""),
                 row.get("SICCode.SicText_4", ""),
             ]
-            if not any(sic_matches(value) for value in sic_values):
+            if not any(sic_matches(value, industry) for value in sic_values):
                 continue
 
             town = (
@@ -111,14 +178,14 @@ def collect_companies_house_bulk(target: int) -> list[ProspectRecord]:
                     town=town,
                     website="",
                     region_focus="UK",
-                    notes="Companies House active software/IT SIC registration.",
+                    notes=f"Companies House active {industry.replace('_', ' ')} SIC registration.",
                 )
             )
 
             if len(records) >= target:
                 break
 
-    print(f"companies_house_bulk: selected {len(records)} active software/IT companies")
+    print(f"companies_house_bulk: selected {len(records)} active {industry.replace('_', ' ')} companies")
     return records
 
 
