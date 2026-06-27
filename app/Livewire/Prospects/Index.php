@@ -217,6 +217,8 @@ class Index extends Component
 
     public function saveGroup(): void
     {
+        $this->resetErrorBag();
+
         $this->validate([
             'group_name' => 'required|string|min:2|max:120',
         ]);
@@ -298,6 +300,8 @@ class Index extends Component
 
     public function saveProspect(): void
     {
+        $this->resetErrorBag();
+
         $this->validate([
             'prospect_agency_name' => 'required|string|min:2|max:255',
             'prospect_town' => 'required|string|min:2|max:255',
@@ -417,11 +421,17 @@ class Index extends Component
 
     public function saveTemplate(): void
     {
-        $this->validate([
+        $this->resetErrorBag();
+
+        $validated = $this->validate([
             'template_name' => 'required|string|min:2|max:120',
             'template_subject' => 'required|string|min:2|max:255',
             'template_body' => 'required|string|min:10',
         ]);
+
+        $this->template_name = $validated['template_name'];
+        $this->template_subject = $validated['template_subject'];
+        $this->template_body = $validated['template_body'];
 
         if ($this->edit_template_id) {
             $template = EstateAgentOutreachTemplate::findOrFail($this->edit_template_id);

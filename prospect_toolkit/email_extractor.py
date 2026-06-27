@@ -50,7 +50,7 @@ class EmailExtractor:
         self.industry = industry
         self.delay = delay
         self.max_pages_per_site = max_pages_per_site
-        self.robots_cache: dict[str, RobotFileParser] = {}
+        self.robots_cache: dict[str, RobotFileParser | None] = {}
         self.html_cache: dict[str, str] = {}
 
     def extract_row(
@@ -225,13 +225,22 @@ class EmailExtractor:
         root = f"{parsed.scheme}://{parsed.netloc}"
         if root not in self.robots_cache:
             robot_parser = RobotFileParser()
-            robot_parser.set_url(urljoin(root, "/robots.txt"))
+            robots_url = urljoin(root, "/robots.txt")
+            robot_parser.set_url(robots_url)
             try:
-                robot_parser.read()
+                response = requests.get(robots_url, headers=HEADERS, timeout=5)
+                if response.status_code < 400:
+                    robot_parser.parse(response.text.splitlines())
+                else:
+                    robot_parser.parse([])
             except Exception:
+                self.robots_cache[root] = None
                 return True
             self.robots_cache[root] = robot_parser
-        return self.robots_cache[root].can_fetch(HEADERS["User-Agent"], url)
+        robot = self.robots_cache[root]
+        if robot is None:
+            return True
+        return robot.can_fetch(HEADERS["User-Agent"], url)
 
     def fetch(self, url: str, timeout: int = 15) -> str:
         if url in self.html_cache:

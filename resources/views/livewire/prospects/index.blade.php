@@ -31,7 +31,7 @@
             </div>
 
             @if($showGroupForm)
-                <form wire:submit.prevent="saveGroup" class="space-y-3">
+                <div class="space-y-3">
                     <input
                         type="text"
                         wire:model="group_name"
@@ -40,12 +40,12 @@
                     />
                     @error('group_name') <p class="text-sm text-red-600">{{ $message }}</p> @enderror
                     <div class="flex gap-2">
-                        <button type="submit" class="px-3 py-1.5 bg-blue-600 text-white rounded text-sm">
+                        <button type="button" wire:click="saveGroup" class="px-3 py-1.5 bg-blue-600 text-white rounded text-sm">
                             {{ $edit_group_id ? 'Update' : 'Save' }}
                         </button>
                         <button type="button" wire:click="$set('showGroupForm', false)" class="px-3 py-1.5 border rounded text-sm">Cancel</button>
                     </div>
-                </form>
+                </div>
             @endif
 
             <div class="flex gap-2 text-xs">
@@ -169,7 +169,7 @@
     @if($showTemplateForm)
         <div class="border rounded-lg p-4 space-y-4 dark:border-zinc-700">
             <h3 class="text-lg font-semibold">{{ $edit_template_id ? 'Edit template' : 'New template' }}</h3>
-            <form wire:submit.prevent="saveTemplate" class="space-y-4">
+            <div class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium mb-1">Name</label>
                     <input type="text" wire:model="template_name" class="w-full border rounded p-2 bg-white dark:bg-zinc-700" />
@@ -186,10 +186,10 @@
                     @error('template_body') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div class="flex gap-2">
-                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Save template</button>
+                    <button type="button" wire:click="saveTemplate" class="px-4 py-2 bg-blue-600 text-white rounded">Save template</button>
                     <button type="button" wire:click="$set('showTemplateForm', false)" class="px-4 py-2 border rounded">Cancel</button>
                 </div>
-            </form>
+            </div>
         </div>
     @endif
 
@@ -255,7 +255,7 @@
     @if($showProspectForm)
         <div class="border rounded-lg p-4 space-y-4 dark:border-zinc-700">
             <h3 class="text-lg font-semibold">{{ $edit_prospect_id ? 'Edit prospect' : 'Add prospect' }}</h3>
-            <form wire:submit.prevent="saveProspect" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium mb-1">Agency name</label>
                     <input type="text" wire:model="prospect_agency_name" class="w-full border rounded p-2 bg-white dark:bg-zinc-700" />
@@ -307,7 +307,7 @@
                     <input type="text" wire:model="prospect_review_status" class="w-full border rounded p-2 bg-white dark:bg-zinc-700" />
                 </div>
                 <div class="md:col-span-2 flex gap-2">
-                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">
+                    <button type="button" wire:click="saveProspect" class="px-4 py-2 bg-blue-600 text-white rounded">
                         {{ $edit_prospect_id ? 'Update prospect' : 'Create prospect' }}
                     </button>
                     <button type="button" wire:click="$set('showProspectForm', false)" class="px-4 py-2 border rounded">Cancel</button>
@@ -322,7 +322,7 @@
                         </button>
                     @endif
                 </div>
-            </form>
+            </div>
         </div>
     @endif
 
