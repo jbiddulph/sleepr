@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+php artisan schedule:work --no-interaction --verbose &
+exec vendor/bin/heroku-php-apache2 public/
